@@ -1,0 +1,52 @@
+import random
+from pyne.pyne import *
+from entity import *
+
+def wallify(buffer, engine):
+    neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, 1), (1, 1), (1, -1), (-1, -1)]
+
+    for x in range(buffer.width):
+        for y in range(buffer.height):
+            if buffer.GetAt(x, y).symbol == ' ':
+                for n in neighbors:
+                    el = buffer.GetAt(x + n[0], y + n[1])
+                    if el and el.symbol == '.':
+                        engine.DrawChar('#', (engine.Color.BLACK, random.choice([engine.Color.LIGHT_BLUE, engine.Color.GRAY, engine.Color.DARK_GRAY])), x, y, buffer)
+                        break
+
+    for x in range(buffer.width):
+        for y in range(buffer.height):
+            if buffer.GetAt(x, y).symbol == ' ':
+                engine.DrawChar(' ', (engine.Color.WHITE, engine.Color.BLACK), x, y, buffer)
+
+def crop(buffer, engine):
+    min_x, max_x = 0xffff, 0
+    min_y, max_y = 0xffff, 0
+    
+    for x in range(buffer.width):
+        for y in range(buffer.height):
+            if buffer.GetAt(x, y).symbol != ' ':
+                if x < min_x: min_x = x
+                if x > max_x: max_x = x
+                if y < min_y: min_y = y
+                if y > max_y: max_y = y
+    
+    max_x += 1
+    max_y += 1
+
+    new_buffer = BufferWithEntities(max_x - min_x, max_y - min_y)
+
+    for x in range(new_buffer.width):
+        for y in range(new_buffer.height):
+            e = buffer.GetAt(min_x + x, min_y + y)
+            engine.DrawChar(e.symbol, (e.fg, e.bg), x, y, scr=new_buffer)
+    
+    new_buffer.entities = buffer.entities.copy()
+
+    return new_buffer
+
+class BufferWithEntities(PyneEngine.Buffer):
+    def __init__(self, width: int, height: int):
+        super().__init__(width, height)
+
+        self.entities: list[Entity] = []

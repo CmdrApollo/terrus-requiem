@@ -1,5 +1,9 @@
 import random
 from entity import *
+from utils import *
+
+import tcod.bsp
+import tcod.random
 
 class Map:
     def __init__(self, name, planet, engine, x, y, w=74, h=21):
@@ -27,7 +31,17 @@ class Settlement(Map):
         super().__init__(name, planet, engine, w, h)
     
     def generate(self):
-        pass
+        self.engine.Clear(' ', (self.engine.Color.WHITE, self.engine.Color.BLACK), self.data)
+
+        rects = []
+
+        for r in rects:
+            print(r)
+            self.engine.FillRect('.', (self.engine.Color.GRAY, self.engine.Color.BLACK), r[0], r[1], r[2], r[3], scr = self.data)
+
+        wallify(self.data, self.engine)
+
+        self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BLACK), scr = self.data)
 
 class Shipwreck(Map):
     def __init__(self, name, planet, engine, w=74, h=21):

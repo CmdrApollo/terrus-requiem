@@ -2,10 +2,8 @@ from pyne.pyne import *
 from perlin_noise import PerlinNoise
 from area_map import *
 from names import *
-import random 
-
-def string_to_seed(string):
-    return int(sum([ord(string[i]) for i in range(len(string))]))
+from utils import *
+import random
 
 class ColorScheme:
     def __init__(self, forest, hills, plains, beaches, water, deep_water):

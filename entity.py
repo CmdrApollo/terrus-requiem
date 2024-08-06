@@ -1,6 +1,7 @@
 from pyne.pyne import *
 import tcod.path
 import numpy as np
+from copy import copy
 
 class Entity:
     def __init__(self, char, c_pair, x, y):
@@ -26,7 +27,7 @@ class Door(Entity):
         super().__init__(char if char else '+', c_pair if c_pair else (PyneEngine.Color.BROWN, PyneEngine.Color.BLACK), x, y)
         self.locked = locked
         self.solid = True
-        self.og_char = char
+        self.og_char = copy(char)
 
     def PlayerMoveInteract(self, engine, player):
         if self.repr.symbol == '/':
@@ -60,7 +61,7 @@ class Enemy(Entity):
         engine.AddMessage(f"Player Hit {self.name}!")
 
     def OnMyTurn(self, engine):
-        solids: np.Arrayterator = engine.solids
+        solids = engine.solids
 
         solids = np.transpose(solids, (1, 0))
 
@@ -89,7 +90,7 @@ class Enemy(Entity):
         total_others = 0
 
         for other in engine.current_map.entities:
-            if other != self:
+            if type(other) == Enemy and other != self:
                 if abs(other.x - self.x) <= 1 and abs(other.y - self.y) <= 1:
                     separation_x += self.x - other.x
                     separation_y += self.y - other.y

@@ -29,7 +29,7 @@ class PyneEngine:
             self.width = width
             self.height = height
 
-            self.data: list[ScrElement] = [ScrElement(None, 'white', PyneEngine.Color.BLACK) for _ in range(self.width * self.height)]
+            self.data: list[ScrElement] = [ScrElement(None, PyneEngine.Color.WHITE, PyneEngine.Color.BLACK) for _ in range(self.width * self.height)]
 
             self.p = lambda x, y: y * self.width + x
         

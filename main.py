@@ -112,7 +112,7 @@ class Game(PyneEngine):
             r"  \>   |   |___| |   | |   |  \_/| |___| </  ",
             r"                                             ",
             r"-[=]-[=]-[=]-[=]-[=]-[=]-[=]-[=]-[=]-[=]-[=]-",
-            r"   ___   ___    _          ___   ___   _ _   ",
+            r"   ___   ___    _          ___   ___   ___   ",
             r"  |   | |   |  / \  |   | | | | |   | | | |  ",
             r"  |___| |__   |   | |   |   |   |__   | | |  ",
             r"  |  \  |     |  \| |   |   |   |     |   |  ",
@@ -164,22 +164,38 @@ class Game(PyneEngine):
 
         attempt_move = False
         
-        if self.KeyPressed(K_UP):
+        if self.KeyPressed(K_UP) or self.KeyPressed(K_KP8):
             attempt_move = True
             attempt_move_x = self.player.x + 0
             attempt_move_y = self.player.y - 1
-        if self.KeyPressed(K_DOWN):
+        if self.KeyPressed(K_DOWN) or self.KeyPressed(K_KP2):
             attempt_move = True
             attempt_move_x = self.player.x + 0
             attempt_move_y = self.player.y + 1
-        if self.KeyPressed(K_LEFT):
+        if self.KeyPressed(K_LEFT) or self.KeyPressed(K_KP4):
             attempt_move = True
             attempt_move_x = self.player.x - 1
             attempt_move_y = self.player.y + 0
-        if self.KeyPressed(K_RIGHT):
+        if self.KeyPressed(K_RIGHT) or self.KeyPressed(K_KP6):
             attempt_move = True
             attempt_move_x = self.player.x + 1
             attempt_move_y = self.player.y + 0
+        if self.KeyPressed(K_KP9):
+            attempt_move = True
+            attempt_move_x = self.player.x + 1
+            attempt_move_y = self.player.y - 1
+        if self.KeyPressed(K_KP3):
+            attempt_move = True
+            attempt_move_x = self.player.x + 1
+            attempt_move_y = self.player.y + 1
+        if self.KeyPressed(K_KP1):
+            attempt_move = True
+            attempt_move_x = self.player.x - 1
+            attempt_move_y = self.player.y + 1
+        if self.KeyPressed(K_KP7):
+            attempt_move = True
+            attempt_move_x = self.player.x - 1
+            attempt_move_y = self.player.y - 1
 
         if attempt_move:
             allow_move = True
@@ -236,14 +252,14 @@ class Game(PyneEngine):
         if self.waiting_for_direction:
             self.waiting_for_direction = False
 
-            if self.KeyPressed(K_i):        self.direction_x, self.direction_y = + 0, - 1
-            elif self.KeyPressed(K_o):      self.direction_x, self.direction_y = + 1, - 1
-            elif self.KeyPressed(K_l):      self.direction_x, self.direction_y = + 1, + 0
-            elif self.KeyPressed(K_PERIOD): self.direction_x, self.direction_y = + 1, + 1
-            elif self.KeyPressed(K_COMMA):  self.direction_x, self.direction_y = + 0, + 1
-            elif self.KeyPressed(K_m):      self.direction_x, self.direction_y = - 1, + 1
-            elif self.KeyPressed(K_j):      self.direction_x, self.direction_y = - 1, + 0
-            elif self.KeyPressed(K_u):      self.direction_x, self.direction_y = - 1, - 1
+            if self.KeyPressed(K_KP8):        self.direction_x, self.direction_y = + 0, - 1
+            elif self.KeyPressed(K_KP9):      self.direction_x, self.direction_y = + 1, - 1
+            elif self.KeyPressed(K_KP6):      self.direction_x, self.direction_y = + 1, + 0
+            elif self.KeyPressed(K_KP3): self.direction_x, self.direction_y = + 1, + 1
+            elif self.KeyPressed(K_KP2):  self.direction_x, self.direction_y = + 0, + 1
+            elif self.KeyPressed(K_KP1):      self.direction_x, self.direction_y = - 1, + 1
+            elif self.KeyPressed(K_KP4):      self.direction_x, self.direction_y = - 1, + 0
+            elif self.KeyPressed(K_KP7):      self.direction_x, self.direction_y = - 1, - 1
             else: self.waiting_for_direction = True
 
             return not self.waiting_for_direction
@@ -263,7 +279,7 @@ class Game(PyneEngine):
             if len(self.messages):
                 # If we pressed any key (basically), remove the first message in the queue
 
-                if self.HasTextCache() or any([self.KeyPressed(x) for x in [K_UP, K_DOWN, K_LEFT, K_RIGHT]]):
+                if self.HasTextCache() or any([self.KeyPressed(x) for x in [K_UP, K_DOWN, K_LEFT, K_RIGHT, K_KP1, K_KP2, K_KP3, K_KP4, K_KP6, K_KP7, K_KP8, K_KP9]]):
                     self.messages.pop(0)
                 
                 # Quit-out early. this is a choke point for the program
@@ -317,29 +333,38 @@ class Game(PyneEngine):
                             break
 
             case GameScene.PLANET_AREA:
-                move_interact_entity = self.HandleMoveAndInteract()
+                if not self.waiting_for_direction:
+                    move_interact_entity = self.HandleMoveAndInteract()
+                else:
+                    move_interact_entity = None
 
                 has_direction = self.HandleDirection()
 
                 if has_direction:
-                    for e in self.current_map.entities:
-                        if e.x == self.player.x + self.direction_x and e.y == self.player.y + self.direction_y:
-                            if type(e) in [Door, Hatch]:
-                                if e.solid:
-                                    self.AddMessage(f"{'Door' if type(e) == Door else 'Hatch'} is already closed.")
-                                else:
-                                    self.AddMessage(f"You close the {'door' if type(e) == Door else 'hatch'}.")
+                    match self.waiting_action:
+                        case Actions.CLOSE_DOOR:
+                            for e in self.current_map.entities:
+                                if e.x == self.player.x + self.direction_x and e.y == self.player.y + self.direction_y:
+                                    if type(e) in [Door, Hatch]:
+                                        if e.solid:
+                                            self.AddMessage(f"{'Door' if type(e) == Door else 'Hatch'} is already closed.")
+                                        else:
+                                            self.AddMessage(f"You close the {'door' if type(e) == Door else 'hatch'}.")
 
-                                    e.Close()
+                                            e.Close()
 
-                                    self.advance_time = True
+                                            self.advance_time = True
 
-                                    self.GenerateSolidsMap()
-                            else:
-                                self.AddMessage("You can't close that!")
+                                            self.GenerateSolidsMap()
+                                    else:
+                                        self.AddMessage("You can't close that!")
+
+                    self.waiting_action = None
+                    self.waiting_for_direction = False
 
                 if cache == 'c':
                     self.waiting_for_direction = True
+                    self.waiting_action = Actions.CLOSE_DOOR
                     self.AddMessage("Close door in what direction?")
 
                 if move_interact_entity:
@@ -402,12 +427,6 @@ class Game(PyneEngine):
     
     def DrawEntities(self):
         for e in self.current_map.entities:
-            if e.path:
-                for p in e.path:
-                    print(p)
-                    if 0 <= p[0] <= self.game_window.width - 1 and 0 <= p[1] <= self.game_window.height - 1:
-                        self.DrawChar('^', (self.Color.MAGENTA, self.Color.BLACK), p[0], p[1], self.game_window)
-
             self.DrawChar(e.repr.symbol, (e.repr.fg, e.repr.bg), e.x, e.y, self.game_window)
 
     def OnDraw(self):

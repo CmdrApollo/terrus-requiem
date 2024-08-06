@@ -1,6 +1,9 @@
 import random
 from pyne.pyne import *
 from entity import *
+ 
+def string_to_seed(string):
+    return int(sum([ord(string[i]) for i in range(len(string))]))
 
 def wallify(buffer, engine):
     neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, 1), (1, 1), (1, -1), (-1, -1)]

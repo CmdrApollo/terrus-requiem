@@ -1,6 +1,7 @@
 from pyne.pyne import *
 import tcod.path
 import numpy as np
+from item import *
 from copy import copy
 
 class Entity:
@@ -15,6 +16,8 @@ class Entity:
         self.is_enemy = False
 
         self.path = None
+
+        self.to_remove = False
     
     def PlayerMoveInteract(self, engine, player):
         pass
@@ -46,19 +49,24 @@ class Hatch(Door):
     def __init__(self, x, y, locked = False):
         super().__init__(x, y, locked, '%', (PyneEngine.Color.GRAY, PyneEngine.Color.BLACK))
 
-class Enemy(Entity):
-    def __init__(self, x, y, char, c_pair):
+class BasicEnemy(Entity):
+    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, char, c_pair):
         super().__init__(char, c_pair, x, y)
 
-        self.hp     = 100
-        self.max_hp = 100
+        self.hp     = hp
+        self.max_hp = max_hp
 
-        self.name = "Basic Enemy"
+        self.name = name
+
+        self.chance_to_dodge = chance_to_dodge
 
         self.is_enemy = True
 
+    def Kill(self):
+        self.to_remove = True
+
     def PlayerMoveInteract(self, engine, player):
-        engine.AddMessage(f"Player Hit {self.name}!")
+        player.AttackMelee(self)
 
     def OnMyTurn(self, engine):
         solids = engine.solids
@@ -90,7 +98,7 @@ class Enemy(Entity):
         total_others = 0
 
         for other in engine.current_map.entities:
-            if type(other) == Enemy and other != self:
+            if issubclass(type(other), BasicEnemy) and other != self:
                 if abs(other.x - self.x) <= 1 and abs(other.y - self.y) <= 1:
                     separation_x += self.x - other.x
                     separation_y += self.y - other.y
@@ -107,8 +115,14 @@ class Enemy(Entity):
         if 0 <= self.y + force_y <= engine.current_map.height - 1 and solids[self.x, self.y + force_y]:
             self.y += force_y
 
-class Player:
+class CrazedHuman(BasicEnemy):
     def __init__(self, x, y):
+        super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'r', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BLACK))
+
+class Player:
+    def __init__(self, engine, x, y):
+        self.engine = engine
+
         self.x = x
         self.y = y
 
@@ -116,3 +130,36 @@ class Player:
 
         self.scrap = 100
         self.credits = 1000
+
+        self.strength = 5
+        self.intelligence = 5
+        self.dexterity = 5
+        self.perception = 5
+        self.endurance = 5
+
+        self.melee_weapon = MeleeWeapon("Club", MeleeWeaponType.BLUNT, Roll(1, 4, self.strength))
+
+    def ChanceToHitMelee(self):
+        return + (self.perception / 10)
+    
+    def AttackMelee(self, entity):
+        if random.random() <= self.ChanceToHitMelee():
+            # hit successful
+            
+            if random.random() <= entity.chance_to_dodge:
+                # enemy dogdged
+
+                self.engine.AddMessage(f"The {entity.name} dodged your attack!")
+            else:
+                dmg = self.melee_weapon.roll_damage()
+
+                self.engine.AddMessage(f"You deal {dmg} damage to the {entity.name}!")
+
+                entity.hp -= dmg
+
+                if entity.hp <= 0:
+                    self.engine.AddMessage(f"You killed the {entity.name}!")
+
+                    entity.Kill()
+        else:
+            self.engine.AddMessage(f"You missed the {entity.name}.")

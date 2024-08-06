@@ -3,6 +3,7 @@ from planet import Planet
 from entity import *
 from area_map import *
 from ship_chassis import *
+from utils import *
 
 import numpy as np
 import tcod.map
@@ -11,7 +12,7 @@ import tcod.constants
 GAME_NAME = "Terrus Requiem"
 GAME_VERSION = "v0.0.1"
 
-main_menu = PyneEngine.Buffer(76, 28)
+main_menu = PyneEngine.Buffer(terminal_width, terminal_height)
 
 # If we move onto a tile that is non-descriptive, give the generic terrain description
 overworld_tile_descriptions = {
@@ -21,7 +22,7 @@ overworld_tile_descriptions = {
     '^': 'Mountains.',
     '.': 'A Road.',
     '~': 'Hills.',
-    '-': 'Beaches.',
+    '+': 'Beaches.',
 
     'b': 'Your Base.',
 
@@ -30,9 +31,9 @@ overworld_tile_descriptions = {
     'o': 'A Settlement.'
 }
 
-terrain_symbols = ['"', '-', '&', '~']
+terrain_symbols = ['"', '+', '&', '~']
 
-DEBUG = False 
+DEBUG = True
 
 class GameScene:
     MAIN_MENU = 0
@@ -58,7 +59,7 @@ class Actions:
 class Game(PyneEngine):
     TITLE = "Terrus Requiem"
 
-    def __init__(self, terminal_width=76, terminal_height=28, target_size=(1920, 1080)):
+    def __init__(self, terminal_width=terminal_width, terminal_height=terminal_height, target_size=(1600, 900)):
         super().__init__(terminal_width, terminal_height, target_size)
 
         self.ship_chassis = {
@@ -66,11 +67,11 @@ class Game(PyneEngine):
             'X40': generate_chassis_X40(self)
         }
 
-        self.game_window = self.Buffer(self.TerminalWidth() - 2, self.TerminalHeight() - 7)
+        self.game_window = self.Buffer(self.TerminalWidth(), self.TerminalHeight() - 5)
     
         self.current_planet = Planet("XA-B1-12", self, seed = 4)
 
-        self.player = Player(self.TerminalWidth() // 2, self.TerminalHeight() // 2)
+        self.player = Player(self, self.game_window.width // 2, self.game_window.height // 2)
 
         self.current_scene = GameScene.MAIN_MENU
 
@@ -101,8 +102,6 @@ class Game(PyneEngine):
         self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), main_menu)
 
         self.DrawRect((self.Color.CYAN, self.Color.BLACK), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=main_menu)
-        "GET OUT! \n"
-        # This is a comment.
         
         self.DrawTextLines(t := [
             r"  />  ___   ___   ___   ___         ___  <\  ",
@@ -163,6 +162,9 @@ class Game(PyneEngine):
         # returns which entity we attempt to move into
 
         attempt_move = False
+
+        attempt_move_x = 0
+        attempt_move_y = 0
         
         if self.KeyPressed(K_UP) or self.KeyPressed(K_KP8):
             attempt_move = True
@@ -338,6 +340,7 @@ class Game(PyneEngine):
                 else:
                     move_interact_entity = None
 
+
                 has_direction = self.HandleDirection()
 
                 if has_direction:
@@ -371,6 +374,9 @@ class Game(PyneEngine):
                     self.advance_time = True
 
                     move_interact_entity.PlayerMoveInteract(self, self.player)
+                    
+                    if move_interact_entity.to_remove:
+                        self.current_map.entities.remove(move_interact_entity)
 
                     if type(move_interact_entity) in [Door, Hatch]:
                         # If we open a door, regenerate the solids map
@@ -433,7 +439,7 @@ class Game(PyneEngine):
         self.Clear(' ', (self.Color.WHITE, self.Color.BLACK))
         self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), self.game_window)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BLACK), 0, 2, self.TerminalWidth() - 1, self.TerminalHeight() - 6)
+        # self.DrawRect((self.Color.WHITE, self.Color.BLACK), 0, 2, self.TerminalWidth() - 1, self.TerminalHeight() - 6)
         
         match self.current_scene:
             case GameScene.MAIN_MENU:
@@ -536,7 +542,7 @@ class Game(PyneEngine):
                         e = self.game_window.GetAt(x, y)
                         self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x, y, self.game_window)
 
-        self.BlitBuffer(self.game_window, 1, 3)
+        self.BlitBuffer(self.game_window, 0, 2)
 
         if len(self.messages):
             # If we have messages, display the first one
@@ -574,5 +580,5 @@ class Game(PyneEngine):
 
         return True
 
-game = Game()
+game = Game(terminal_width, terminal_height)
 game.start()

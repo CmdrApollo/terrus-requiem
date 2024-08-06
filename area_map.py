@@ -5,8 +5,11 @@ from utils import *
 import tcod.bsp
 import tcod.random
 
+map_width = terminal_width
+map_height = terminal_height - 5
+
 class Map:
-    def __init__(self, name, planet, engine, x, y, w=74, h=21):
+    def __init__(self, name, planet, engine, x, y, w=map_width, h=map_height):
         self.name = name
         self.planet = planet
         self.engine = engine
@@ -27,7 +30,7 @@ class Map:
         pass
 
 class Settlement(Map):
-    def __init__(self, name, planet, engine, w=74, h=21):
+    def __init__(self, name, planet, engine, w=map_width, h=map_height):
         super().__init__(name, planet, engine, w, h)
     
     def generate(self):
@@ -44,12 +47,12 @@ class Settlement(Map):
         self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BLACK), scr = self.data)
 
 class Shipwreck(Map):
-    def __init__(self, name, planet, engine, w=74, h=21):
+    def __init__(self, name, planet, engine, w=map_width, h=map_height):
         super().__init__(name, planet, engine, w, h)
     
     def generate(self):
-        # model = random.choice(list(self.engine.ship_chassis))
-        model = 'X40'
+        model = random.choice(list(self.engine.ship_chassis))
+        # model = 'X40'
         self.name = self.name.replace("Test Ship", f'Exodus-{model}')
 
         s = self.engine.ship_chassis[model]
@@ -65,24 +68,24 @@ class Shipwreck(Map):
             e.y += y
         
         for _ in range(5):
-            self.entities.append(Enemy(random.randint(0, self.width - 1), random.randint(0, self.height - 1), 'e', (self.engine.Color.LIGHT_RED, self.engine.Color.BLACK)))
+            self.entities.append(CrazedHuman(random.randint(0, self.width - 1), random.randint(0, self.height - 1)))
 
 class Dungeon(Map):
-    def __init__(self, name, planet, engine, w=74, h=21):
+    def __init__(self, name, planet, engine, w=map_width, h=map_height):
         super().__init__(name, planet, engine, w, h)
     
     def generate(self):
         pass
 
 class Cave(Map):
-    def __init__(self, name, planet, engine, w=74, h=21):
+    def __init__(self, name, planet, engine, w=map_width, h=map_height):
         super().__init__(name, planet, engine, w, h)
     
     def generate(self):
         pass
 
 class Base(Map):
-    def __init__(self, name, planet, engine, x, y, w=74, h=21):
+    def __init__(self, name, planet, engine, x, y, w=map_width, h=map_height):
         super().__init__(name, planet, engine, x, y, w, h)
 
         self.level = 1

@@ -17,6 +17,8 @@ RMB = 2
 
 pygame.init()
 
+FULLSCREEN = False
+
 class Status:
     BOOT = 0
     IDLE = 1
@@ -38,7 +40,7 @@ class PyneEngine:
                 return None
             return self.data[self.p(x, y)]
 
-    def __init__(self, terminal_width=76, terminal_height=28, target_size=(1920, 1080)):
+    def __init__(self, terminal_width=76, terminal_height=28, target_size=(1290, 720)):
         self._status = Status.BOOT
         self._boot_timer = 0
         self._stall_timer = 0
@@ -60,7 +62,7 @@ class PyneEngine:
                     break
                 point += 1
                 
-        point = int(point * 0.8)
+        # point = int(point * 0.8)
 
         self._font = pygame.font.Font(font, point)
         self._point = point
@@ -69,7 +71,7 @@ class PyneEngine:
 
         self._scr_buf = self.Buffer(self._width, self._height)
 
-        self._window = pygame.display.set_mode((self._single_char_size.x * self._width, self._single_char_size.y * self._height))
+        self._window = pygame.display.set_mode((self._single_char_size.x * self._width, self._single_char_size.y * self._height), pygame.FULLSCREEN if FULLSCREEN else 0)
 
         self._character_cache = {
 
@@ -116,7 +118,7 @@ class PyneEngine:
 
     class Color:
         WHITE = '#ffffff'
-        BLACK = '#000000'
+        BLACK = '#101010'
 
         RED = '#ff0000'
         GREEN = '#00ff00'
@@ -162,7 +164,7 @@ class PyneEngine:
     def DarkenColor(self, color):
         r, g, b = int(color[1] + color[2], 16), int(color[3] + color[4], 16), int(color[5] + color[6], 16)
 
-        return '#' + ''.join([hex(x // 2).removeprefix('0x').rjust(2, '0') for x in [r,g,b]])
+        return '#' + ''.join([hex(int(x * 0.75)).removeprefix('0x').rjust(2, '0') for x in [r,g,b]])
 
     def OnConstruct(self):
         pass
@@ -201,16 +203,22 @@ class PyneEngine:
         scr = scr if scr else self._scr_buf
         if 0 <= x     < self._width:
             if 0 <= y < self._height:
-                scr.data[scr.p(x, y)].symbol = char
-                scr.data[scr.p(x, y)].fg     = c_pair[0]
-                scr.data[scr.p(x, y)].bg     = c_pair[1]
+                try:
+                    scr.data[scr.p(x, y)].symbol = char
+                    scr.data[scr.p(x, y)].fg     = c_pair[0]
+                    scr.data[scr.p(x, y)].bg     = c_pair[1]
+                except:
+                    pass
 
     def SetColor(self, c_pair, x, y, scr=None):
         scr = scr if scr else self._scr_buf
         if 0 <= x     < self._width:
             if 0 <= y < self._height:
-                scr.data[scr.p(x, y)].fg     = c_pair[0]
-                scr.data[scr.p(x, y)].bg     = c_pair[1]
+                try:
+                    scr.data[scr.p(x, y)].fg     = c_pair[0]
+                    scr.data[scr.p(x, y)].bg     = c_pair[1]
+                except:
+                    pass
 
     def DrawText(self, text, c_pair, x, y, scr=None):
         scr = scr if scr else self._scr_buf
@@ -314,6 +322,7 @@ class PyneEngine:
         pygame.display.flip()
 
     def start(self):
+        global FULLSCREEN
 
         run = True
         clock = pygame.time.Clock()
@@ -324,11 +333,13 @@ class PyneEngine:
             if delta:
                 pygame.display.set_caption(f"{self.TITLE} | Pyne Engine v{VERSION} - {int( 1 / delta )} FPS")
 
+            keys = pygame.key.get_pressed()
+
             self._text_edit = False
 
             self._pressed = [False for _ in range(255)]
             self._released = [False for _ in range(255)]
-            self._held = [pygame.key.get_pressed()[i] for i in range(255)]
+            self._held = [keys[i] for i in range(255)]
 
             self._mouse_pressed = [False for _ in range(3)]
             self._mouse_released = [False for _ in range(3)]
@@ -356,6 +367,11 @@ class PyneEngine:
                 elif event.type == pygame.TEXTINPUT:
                     self._text_edit = True
                     self._text_edit_cache = event.text
+
+            if (keys[K_LALT] or keys[K_RALT]) and self.KeyPressed(K_RETURN):
+                FULLSCREEN = not FULLSCREEN
+                
+                self._window = pygame.display.set_mode((self._single_char_size.x * self._width, self._single_char_size.y * self._height), pygame.FULLSCREEN if FULLSCREEN else 0)
 
             if self._status == Status.BOOT:
                 if self._boot_timer >= 5:

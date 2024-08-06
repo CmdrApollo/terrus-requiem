@@ -1,7 +1,9 @@
 import random
 from pyne.pyne import *
 from entity import *
- 
+
+terminal_width, terminal_height = 76, 30
+
 def string_to_seed(string):
     return int(sum([ord(string[i]) for i in range(len(string))]))
 

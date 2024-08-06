@@ -46,7 +46,7 @@ class Planet:
         self.name = name
         self.engine = engine
 
-        self.overworld = engine.Buffer(self.engine.TerminalWidth() - 2, self.engine.TerminalHeight() - 7)
+        self.overworld = engine.Buffer(self.engine.TerminalWidth(), self.engine.TerminalHeight() - 5)
 
         self.areas = []
         
@@ -73,7 +73,7 @@ class Planet:
                     char = "\""
                     color = self.color_scheme.plains
                 elif n > -0.05:
-                    char = '-'
+                    char = '+'
                     color = self.color_scheme.beaches
                 elif n > -0.125:
                     char = "="
@@ -110,3 +110,8 @@ class Planet:
                         self.areas.append(Settlement(generate_settlement_name(), self, self.engine, x, y))
 
                 engine.DrawChar(char, (color, engine.Color.BLACK), x, y, self.overworld)
+
+        # the starting planet gets an extra hand-placed shipwreck
+        if self.name == "XA-B1-12":
+            engine.DrawChar('x', (PyneEngine.Color.GRAY, engine.Color.BLACK), 13, 15, self.overworld)
+            self.areas.append(Shipwreck(f"Shipwreck of the {generate_ship_name()}", self, self.engine, 13, 15))

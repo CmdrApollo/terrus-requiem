@@ -12,6 +12,7 @@ import tcod.constants
 GAME_NAME = "Terrus Requiem"
 GAME_VERSION = "v0.0.1"
 
+# these screens are static, so they are stored as buffers for simplicity.
 main_menu = PyneEngine.Buffer(terminal_width, terminal_height)
 credits_screen = PyneEngine.Buffer(terminal_width, terminal_height)
 
@@ -37,6 +38,8 @@ terrain_symbols = ['"', '+', '&', '~']
 DEBUG = True
 
 class GameScene:
+    # All of the 'scenes' found in the game
+
     MAIN_MENU = 0
     CREDITS = 1
 
@@ -56,34 +59,37 @@ class GameScene:
     BASE_INFO = 10
 
 class Actions:
+    # actions that require a direction
     CLOSE_DOOR = 0
 
 class Game(PyneEngine):
-    TITLE = "Terrus Requiem"
+    # name of the game and title of the window
+    TITLE = GAME_NAME
 
     def __init__(self, terminal_width=terminal_width, terminal_height=terminal_height, target_size=(1600, 900)):
         super().__init__(terminal_width, terminal_height, target_size)
 
+        # generate the ship chassis buffers
         self.ship_chassis = {
             'Z800': generate_chassis_Z800(self),
             'X40': generate_chassis_X40(self)
         }
 
+        # where most things get rendered besides the 5 lines of text
         self.game_window = self.Buffer(self.TerminalWidth(), self.TerminalHeight() - 5)
     
         self.current_planet = Planet("XA-B1-12", self, seed = 4)
-
         self.player = Player(self, self.game_window.width // 2, self.game_window.height // 2)
 
+        # used for the pseudo-state machine
         self.current_scene = GameScene.MAIN_MENU
 
+        # used for collisions things
         self.current_map = None
-
         self.current_overlapping_element = None
 
+        # the two lines at the top of the screen
         self.messages = []
-
-        self.waiting_for_wall_place = False
 
         self.renaming_base = False
 
@@ -91,19 +97,24 @@ class Game(PyneEngine):
 
         self.first_frame = True
 
+        # flag for if the user has performed an action
         self.advance_time = False
 
+        # if the program should wait for a direction and what action it's waiting for
+        # TODO: currently only close door action
         self.waiting_for_direction = False
-
         self.waiting_action = None
 
+    # add messages to the queue
     def AddMessage(self, message):
         self.messages.append(message)
 
     def OnConstruct(self):
-        self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), main_menu)
+        # generate the main menu buffer
 
-        self.DrawRect((self.Color.CYAN, self.Color.BLACK), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=main_menu)
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), main_menu)
+
+        self.DrawRect((self.Color.CYAN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=main_menu)
         
         self.DrawTextLines(t := [
             r"  />  ___   ___   ___   ___         ___  <\  ",
@@ -118,14 +129,14 @@ class Game(PyneEngine):
             r"  |___| |__   |   | |   |   |   |__   | | |  ",
             r"  |  \  |     |  \| |   |   |   |     |   |  ",
             r"  |   | |___|  \_/\  \_/| |_|_| |___| |   |  ",
-        ], (self.Color.WHITE, self.Color.BLACK), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2, scr = main_menu)
+        ], (self.Color.WHITE, self.Color.BACKGROUND), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2, scr = main_menu)
 
         for i in [0, 1, 2, 3, 41, 42, 43, 44]:
             for j in range(5):
-                self.SetColor((self.Color.YELLOW, self.Color.BLACK), x + i, y + j, main_menu)
+                self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j, main_menu)
             
         # for i in range(45):
-        #     self.SetColor((self.Color.DARK_MAGENTA if not (i % 4) else self.Color.DARK_RED, self.Color.BLACK), x + i, y + 6, scr = main_menu)
+        #     self.SetColor((self.Color.DARK_MAGENTA if not (i % 4) else self.Color.DARK_RED, self.Color.BACKGROUND), x + i, y + 6, scr = main_menu)
 
         self.DrawTextLines(lines := [
             "p - Play             ",
@@ -133,17 +144,19 @@ class Game(PyneEngine):
             "x - Delete Saved Game",
             "c - Credits          ",
             "q - Quit             ",
-        ], (self.Color.YELLOW, self.Color.BLACK), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = main_menu)
+        ], (self.Color.YELLOW, self.Color.BACKGROUND), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = main_menu)
 
         for i in range(3):
             for j in range(5):
-                self.SetColor((self.Color.WHITE, self.Color.BLACK), x + i, y + j, scr = main_menu)
+                self.SetColor((self.Color.WHITE, self.Color.BACKGROUND), x + i, y + j, scr = main_menu)
 
-        self.DrawTextLines([GAME_VERSION], (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - 2, self.TerminalHeight() - 2, True, scr = main_menu)
+        self.DrawTextLines([GAME_VERSION], (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - 2, self.TerminalHeight() - 2, True, scr = main_menu)
         
-        self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), credits_screen)
+        # generate the credits screen buffer
 
-        self.DrawRect((self.Color.MAGENTA, self.Color.BLACK), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=credits_screen)
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), credits_screen)
+
+        self.DrawRect((self.Color.MAGENTA, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=credits_screen)
         
         self.DrawTextLines(t := [
             r"  />  ___   ___   ___   __    ___   ___   ___  <\  ",
@@ -151,34 +164,35 @@ class Game(PyneEngine):
             r"<<   |     |___| |__   |   |   |     |   |___    >>",
             r" \\  |     |  \  |     |   |   |     |       |  // ",
             r"  \> |___| |   | |___| |___| |_|_|   |   |___| </  ",
-        ], (self.Color.WHITE, self.Color.BLACK), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2, scr = credits_screen)
+        ], (self.Color.WHITE, self.Color.BACKGROUND), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2, scr = credits_screen)
 
         for i in [0, 1, 2, 3, 47, 48, 49, 50]:
             for j in range(5):
-                self.SetColor((self.Color.YELLOW, self.Color.BLACK), x + i, y + j, credits_screen)
+                self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j, credits_screen)
 
         self.DrawTextLines(lines := [
             "z - Return",
-        ], (self.Color.YELLOW, self.Color.BLACK), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = credits_screen)
+        ], (self.Color.YELLOW, self.Color.BACKGROUND), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = credits_screen)
 
         for i in range(3):
-            self.SetColor((self.Color.WHITE, self.Color.BLACK), x + i, y, scr = credits_screen)
+            self.SetColor((self.Color.WHITE, self.Color.BACKGROUND), x + i, y, scr = credits_screen)
 
-        self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BLACK), x := self.TerminalWidth() // 3, y := self.TerminalHeight() // 4 + 4, credits_screen)
-        self.DrawText(t := "Mélanie J.", (self.Color.WHITE, self.Color.BLACK), x - len(t) // 2, y + 1, credits_screen)
-        self.DrawText(t := "<The Creator>", (self.Color.GRAY, self.Color.BLACK), x - len(t) // 2, y + 2, credits_screen)
+        self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BACKGROUND), x := self.TerminalWidth() // 3, y := self.TerminalHeight() // 4 + 4, credits_screen)
+        self.DrawText(t := "Mélanie J.", (self.Color.WHITE, self.Color.BACKGROUND), x - len(t) // 2, y + 1, credits_screen)
+        self.DrawText(t := "<The Creator>", (self.Color.GRAY, self.Color.BACKGROUND), x - len(t) // 2, y + 2, credits_screen)
 
-        self.DrawChar('@', (self.Color.LIGHT_BLUE, self.Color.BLACK), x := (self.TerminalWidth() // 3) * 2, y := self.TerminalHeight() // 4 + 4, credits_screen)
-        self.DrawText(t := "Alex J.", (self.Color.WHITE, self.Color.BLACK), x - len(t) // 2, y + 1, credits_screen)
-        self.DrawText(t := "<The Design Helper>", (self.Color.GRAY, self.Color.BLACK), x - len(t) // 2, y + 2, credits_screen)
+        self.DrawChar('@', (self.Color.LIGHT_BLUE, self.Color.BACKGROUND), x := (self.TerminalWidth() // 3) * 2, y := self.TerminalHeight() // 4 + 4, credits_screen)
+        self.DrawText(t := "Alex J.", (self.Color.WHITE, self.Color.BACKGROUND), x - len(t) // 2, y + 1, credits_screen)
+        self.DrawText(t := "<The Design Helper>", (self.Color.GRAY, self.Color.BACKGROUND), x - len(t) // 2, y + 2, credits_screen)
 
-        self.DrawChar('@', (self.Color.LIGHT_YELLOW, self.Color.BLACK), x := self.TerminalWidth() // 2, y := self.TerminalHeight() // 2 + 3, credits_screen)
-        self.DrawText(t := "Michael H.", (self.Color.WHITE, self.Color.BLACK), x - len(t) // 2, y + 1, credits_screen)
-        self.DrawText(t := "<The Emotional Support>", (self.Color.GRAY, self.Color.BLACK), x - len(t) // 2, y + 2, credits_screen)
+        self.DrawChar('@', (self.Color.LIGHT_YELLOW, self.Color.BACKGROUND), x := self.TerminalWidth() // 2, y := self.TerminalHeight() // 2 + 3, credits_screen)
+        self.DrawText(t := "Michael H.", (self.Color.WHITE, self.Color.BACKGROUND), x - len(t) // 2, y + 1, credits_screen)
+        self.DrawText(t := "<The Emotional Support>", (self.Color.GRAY, self.Color.BACKGROUND), x - len(t) // 2, y + 2, credits_screen)
 
         return True
     
     def GenerateSolidsMap(self):
+        # used for pathfinding and fov
         solids = np.array([[ 0 for _ in range(self.current_map.width) ] for _ in range(self.current_map.height)])
         solids[:] = True
 
@@ -190,12 +204,14 @@ class Game(PyneEngine):
         self.solids = solids
 
     def HandleTextInput(self):
+        # used for things like picking names of things
         if self.HasTextCache():
             self.user_text_input += self.TextCache()
         elif self.KeyPressed(K_BACKSPACE):
             self.user_text_input = self.user_text_input[:-1]
 
     def HandleMoveAndInteract(self):
+        # does what it says basically
         # returns which entity we attempt to move into
 
         attempt_move = False
@@ -267,10 +283,9 @@ class Game(PyneEngine):
         return None
     
     def AdvanceTime(self):
+        # TODO: make more advanced time system
         for e in self.current_map.entities:
             e.OnMyTurn(self)
-        
-        # self.GenerateSolidsMap()
 
         self.advance_time = False
 
@@ -288,17 +303,19 @@ class Game(PyneEngine):
         self.current_scene = GameScene.PLANET_OVERWORLD
 
     def HandleDirection(self):
+        # sets the direction x and y variables based on what key we pressed
+        # returns true if no longer waiting for a direction (key has been pressed)
         if self.waiting_for_direction:
             self.waiting_for_direction = False
 
-            if self.KeyPressed(K_KP8):        self.direction_x, self.direction_y = + 0, - 1
-            elif self.KeyPressed(K_KP9):      self.direction_x, self.direction_y = + 1, - 1
-            elif self.KeyPressed(K_KP6):      self.direction_x, self.direction_y = + 1, + 0
-            elif self.KeyPressed(K_KP3): self.direction_x, self.direction_y = + 1, + 1
-            elif self.KeyPressed(K_KP2):  self.direction_x, self.direction_y = + 0, + 1
-            elif self.KeyPressed(K_KP1):      self.direction_x, self.direction_y = - 1, + 1
-            elif self.KeyPressed(K_KP4):      self.direction_x, self.direction_y = - 1, + 0
-            elif self.KeyPressed(K_KP7):      self.direction_x, self.direction_y = - 1, - 1
+            if   self.KeyPressed(K_KP8) or self.KeyPressed(K_UP)   : self.direction_x, self.direction_y = + 0, - 1
+            elif self.KeyPressed(K_KP9)                            : self.direction_x, self.direction_y = + 1, - 1
+            elif self.KeyPressed(K_KP6) or self.KeyPressed(K_RIGHT): self.direction_x, self.direction_y = + 1, + 0
+            elif self.KeyPressed(K_KP3)                            : self.direction_x, self.direction_y = + 1, + 1
+            elif self.KeyPressed(K_KP2) or self.KeyPressed(K_DOWN) : self.direction_x, self.direction_y = + 0, + 1
+            elif self.KeyPressed(K_KP1)                            : self.direction_x, self.direction_y = - 1, + 1
+            elif self.KeyPressed(K_KP4) or self.KeyPressed(K_LEFT) : self.direction_x, self.direction_y = - 1, + 0
+            elif self.KeyPressed(K_KP7)                            : self.direction_x, self.direction_y = - 1, - 1
             else: self.waiting_for_direction = True
 
             return not self.waiting_for_direction
@@ -306,15 +323,19 @@ class Game(PyneEngine):
         return False
 
     def OnUpdate(self, delta):
+        # called every frame
+
         if self.first_frame:
             # if we don't do this and the user hits a key to skip the engine intro,
             # the first line of text gets skipped entirely
             self.first_frame = False
             return True
 
+        # gets the 'ScrElement' object from the planet overworld
         self.current_overlapping_element = self.current_planet.overworld.GetAt(self.player.x, self.player.y)
 
-        if self.current_scene not in [GameScene.MAIN_MENU, GameScene.INVENTORY, GameScene.BASE_INFO]:
+        # TODO: update as more game scenes get implemented.
+        if self.current_scene in [GameScene.PLANET_AREA, GameScene.PLANET_OVERWORLD]:
             if len(self.messages):
                 # If we pressed any key (basically), remove the first message in the queue
 
@@ -327,32 +348,40 @@ class Game(PyneEngine):
                 if len(self.messages) > 0:
                     return True
 
+        # stores what unicode character has been pressed
+        # obeys modifiers
         cache = self.TextCache() if self.HasTextCache() else None
-        
+
+        # the dreaded switch case
         match self.current_scene:
             case GameScene.MAIN_MENU:
                 if cache == 'p':
                     # TODO : switch this to character creation
                     self.current_scene = GameScene.PLANET_OVERWORLD
                 elif cache == 'c':
+                    # move to credits scene
                     self.current_scene = GameScene.CREDITS
                 elif cache == 'q':
+                    # quit the game
                     return False
             
             case GameScene.CREDITS:
                 if cache == 'z':
+                    # move back to main menu
                     self.current_scene = GameScene.MAIN_MENU
 
             case GameScene.PLANET_OVERWORLD:
+                # we can move and interact in the overworld
                 self.HandleMoveAndInteract()
 
                 if cache == 'b':
+                    # attempt place player base
                     if self.current_overlapping_element.symbol in terrain_symbols:
                         if not self.current_planet.contains_base:
                             # If the player presses 'b' and the current planet does not currently have a base, create one.
                             self.DrawChar(
                                 'b',
-                                (self.current_overlapping_element.fg, self.Color.BLACK),
+                                (self.current_overlapping_element.fg, self.Color.BACKGROUND),
                                 self.player.x, self.player.y,
                                 self.current_planet.overworld
                             )
@@ -378,17 +407,19 @@ class Game(PyneEngine):
                             break
 
             case GameScene.PLANET_AREA:
+                # if we aren't holding up the game for a direction to be pressed
+                # get what entity we move into (for interaction)
                 if not self.waiting_for_direction:
                     move_interact_entity = self.HandleMoveAndInteract()
                 else:
                     move_interact_entity = None
-
 
                 has_direction = self.HandleDirection()
 
                 if has_direction:
                     match self.waiting_action:
                         case Actions.CLOSE_DOOR:
+                            # check every entity to see if it is a door/hatch
                             for e in self.current_map.entities:
                                 if e.x == self.player.x + self.direction_x and e.y == self.player.y + self.direction_y:
                                     if type(e) in [Door, Hatch]:
@@ -405,19 +436,24 @@ class Game(PyneEngine):
                                     else:
                                         self.AddMessage("You can't close that!")
 
+                    # reset
                     self.waiting_action = None
                     self.waiting_for_direction = False
 
                 if cache == 'c':
+                    # player is attempting to close a door
                     self.waiting_for_direction = True
                     self.waiting_action = Actions.CLOSE_DOOR
                     self.AddMessage("Close door in what direction?")
 
                 if move_interact_entity:
+                    # if we move into an entity, interact with it and advance time
                     self.advance_time = True
 
                     move_interact_entity.PlayerMoveInteract(self, self.player)
                     
+                    # remove the entity if it has marked itself for removal
+                    # (usually upon death)
                     if move_interact_entity.to_remove:
                         self.current_map.entities.remove(move_interact_entity)
 
@@ -429,16 +465,16 @@ class Game(PyneEngine):
                     self.AdvanceTime()
             
             case GameScene.PLAYER_BASE:
+                # we can move and interact in the base
                 self.HandleMoveAndInteract()
 
                 if cache == '<':
+                    # player leaves base
                     self.AddMessage("You leave your base.")
                     self.LoadOverworld()
                 elif cache == 'b':
+                    # move to base info scene
                     self.current_scene = GameScene.BASE_INFO
-                
-                if cache != 'c':
-                    self.waiting_for_wall_place = False
 
             case GameScene.DUNGEON:
                 self.HandleMoveAndInteract()
@@ -475,39 +511,46 @@ class Game(PyneEngine):
         return True
     
     def DrawEntities(self):
+        # go thru each entity and draw it to the game window
         for e in self.current_map.entities:
             self.DrawChar(e.repr.symbol, (e.repr.fg, e.repr.bg), e.x, e.y, self.game_window)
 
     def OnDraw(self):
-        self.Clear(' ', (self.Color.WHITE, self.Color.BLACK))
-        self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), self.game_window)
-
-        # self.DrawRect((self.Color.WHITE, self.Color.BLACK), 0, 2, self.TerminalWidth() - 1, self.TerminalHeight() - 6)
+        # clear the screen and the game window
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND))
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window)
         
+        # the other dreaded switch case
         match self.current_scene:
             case GameScene.MAIN_MENU:
-                
+                # blit the static menu buffer
                 self.BlitBuffer(main_menu, 0, 0)
                 return True
             
             case GameScene.CREDITS:
-                
+                # blit the static credits buffer
                 self.BlitBuffer(credits_screen, 0, 0)
                 return True
 
             case GameScene.PLANET_OVERWORLD:
+                # blit the planet overworld buffer to the game window
+                # and put the planet name on the bottom of the screen
                 self.BlitBuffer(self.current_planet.overworld, 0, 0, self.game_window)
-                self.DrawText(f"{self.current_planet.name} Overworld", (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 1)
+                self.DrawText(f"{self.current_planet.name} Overworld", (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
 
             case GameScene.PLANET_AREA:
+                # blit the map buffer to the game window
+                # and put the area name on the bottom of the screen
                 self.BlitBuffer(self.current_map.data, 0, 0, self.game_window)
-                self.DrawText(self.current_map.name, (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 1)
+                self.DrawText(self.current_map.name, (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
             
                 self.DrawEntities()
 
             case GameScene.PLAYER_BASE:
+                # blit the base buffer to the game window
+                # and put the base name on the bottom of the screen
                 self.BlitBuffer(self.current_map.data, 0, 0, self.game_window)
-                self.DrawText(self.current_map.name, (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 1)
+                self.DrawText(self.current_map.name, (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
 
             case GameScene.DUNGEON:
                 pass
@@ -525,15 +568,17 @@ class Game(PyneEngine):
                 pass
 
             case GameScene.BASE_INFO:
-                self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), self.game_window)
+                self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window)
+                # draw the title
                 self.DrawTextLines(
                     [
                         "Base Info",
                         "-"*self.game_window.width,
                     ],
-                    (self.Color.YELLOW, self.Color.BLACK), 0, 0,
+                    (self.Color.YELLOW, self.Color.BACKGROUND), 0, 0,
                     scr = self.game_window
                 )
+                # draw the left side
                 self.DrawTextLines(
                     [
                         f'Name   -',
@@ -542,9 +587,10 @@ class Game(PyneEngine):
                         f'Level  -',
                         f'EXP    -',
                     ],
-                    (self.Color.WHITE, self.Color.BLACK), 0, 3,
+                    (self.Color.WHITE, self.Color.BACKGROUND), 0, 3,
                     scr = self.game_window
                 )
+                # draw the right side
                 self.DrawTextLines(
                     [
                         f'{self.current_map.name}',
@@ -553,30 +599,32 @@ class Game(PyneEngine):
                         f'{self.current_map.level}',
                         f'{self.current_map.exp}/{self.current_map.exp_to_level_up}'
                     ],
-                    (self.Color.YELLOW, self.Color.BLACK), 10, 3,
+                    (self.Color.YELLOW, self.Color.BACKGROUND), 10, 3,
                     scr = self.game_window
                 )
 
+                # draw a lil window if renaming the base
                 if self.renaming_base:
                     self.FillRect(' ', (0, 0), self.game_window.width // 2 - 20, self.game_window.height // 2 - 4, 40, 8, scr = self.game_window)
-                    self.DrawRect((self.Color.WHITE, self.Color.BLACK), self.game_window.width // 2 - 20, self.game_window.height // 2 - 4, 40, 8, scr = self.game_window)
+                    self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.game_window.width // 2 - 20, self.game_window.height // 2 - 4, 40, 8, scr = self.game_window)
 
-                    self.DrawTextLines(["Rename your base to what?", '-' * 39], (self.Color.YELLOW, self.Color.BLACK), self.game_window.width // 2 - 19, self.game_window.height // 2 - 3, scr=self.game_window)
+                    self.DrawTextLines(["Rename your base to what?", '-' * 39], (self.Color.YELLOW, self.Color.BACKGROUND), self.game_window.width // 2 - 19, self.game_window.height // 2 - 3, scr=self.game_window)
 
-                    self.DrawText(self.user_text_input + '_', (self.Color.WHITE, self.Color.BLACK), self.game_window.width // 2 - 19, self.game_window.height // 2 - 1, scr = self.game_window)
+                    self.DrawText(self.user_text_input + '_', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window.width // 2 - 19, self.game_window.height // 2 - 1, scr = self.game_window)
 
-                self.DrawText(t := "n - Rename Base     z - Exit", (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - (len(t) + 1), self.TerminalHeight() - 1)
+                self.DrawText(t := "n - Rename Base     z - Exit", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - (len(t) + 1), self.TerminalHeight() - 1)
 
         if self.current_scene != GameScene.BASE_INFO:
-            self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BLACK), self.player.x, self.player.y, self.game_window)
+            # draw the '@' for the player
+            self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BACKGROUND), self.player.x, self.player.y, self.game_window)
 
         if self.current_map:
+            # compute fov
             fov = tcod.map.compute_fov(self.solids, (self.player.y, self.player.x), 3 * self.player.sight_distance, algorithm=tcod.constants.FOV_DIAMOND)
 
-            if self.current_map:
-                active_visibility: list[bool] = self.current_map.visibility.copy()
-                active_visibility = [False for _ in range(len(active_visibility))]
+            active_visibility = [False for _ in range(len(self.current_map.visibility))]
 
+            # black out or darken cells based on the visibility
             for x in range(self.game_window.width):
                 for y in range(self.game_window.height):
                     if fov[y, x] and self.current_map:
@@ -584,18 +632,20 @@ class Game(PyneEngine):
                         active_visibility[y * self.current_map.width + x] = True
                     
                     if self.current_map and not self.current_map.visibility[y * self.current_map.width + x]:
-                        self.DrawChar('?', (self.Color.VERY_DARK_GRAY, self.Color.BLACK), x, y, self.game_window)
+                        self.DrawChar('?', (self.Color.VERY_DARK_GRAY, self.Color.BACKGROUND), x, y, self.game_window)
                     
                     if self.current_map and self.current_map.visibility[y * self.current_map.width + x] and not active_visibility[y * self.current_map.width + x]:
                         e = self.game_window.GetAt(x, y)
                         self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x, y, self.game_window)
 
+        # put the game window onto the main screen
         self.BlitBuffer(self.game_window, 0, 2)
 
         if len(self.messages):
             # If we have messages, display the first one
             msg = self.messages[0] + (' (more)' if len(self.messages) != 1 else '')
 
+            # split a line that's too long into two lines
             if len(msg) > self.TerminalWidth() - 1:
                 lines = ['']
                 size = 0
@@ -608,25 +658,25 @@ class Game(PyneEngine):
                     if size > self.TerminalWidth() - 5:
                         lines.append('')
                         size = 0
-                
-                # if len(lines) > 2:
-                #     self.AddMessage(' '.join(lines[2:]))
             else:
                 lines = [msg]
 
-            self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BLACK), 0, 0)
+            # draw the text
+            self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
         elif self.current_scene == GameScene.PLANET_OVERWORLD:
             # Otherwise, attempt to show the generic description of the tile we are on
             if self.current_overlapping_element.symbol in overworld_tile_descriptions:
-                self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BLACK), 0, 0)
+                self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
 
         if DEBUG:
+            # highlight the mouse pos and show the pos x and y
             mx, my = self.MousePos()
 
             self.SetColor((self._scr_buf.GetAt(mx, my).fg, self.Color.WHITE), mx, my)
-            self.DrawTextLines([f"{mx, my}"], (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - 1, 0, True)
+            self.DrawTextLines([f"{mx, my}"], (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - 1, 0, True)
 
         return True
 
+# create the game object and start the game :)
 game = Game(terminal_width, terminal_height)
 game.start()

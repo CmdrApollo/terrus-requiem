@@ -34,17 +34,17 @@ class Settlement(Map):
         super().__init__(name, planet, engine, w, h)
     
     def generate(self):
-        self.engine.Clear(' ', (self.engine.Color.WHITE, self.engine.Color.BLACK), self.data)
+        self.engine.Clear(' ', (self.engine.Color.WHITE, self.engine.Color.BACKGROUND), self.data)
 
         rects = []
 
         for r in rects:
             print(r)
-            self.engine.FillRect('.', (self.engine.Color.GRAY, self.engine.Color.BLACK), r[0], r[1], r[2], r[3], scr = self.data)
+            self.engine.FillRect('.', (self.engine.Color.GRAY, self.engine.Color.BACKGROUND), r[0], r[1], r[2], r[3], scr = self.data)
 
         wallify(self.data, self.engine)
 
-        self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BLACK), scr = self.data)
+        self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BACKGROUND), scr = self.data)
 
 class Shipwreck(Map):
     def __init__(self, name, planet, engine, w=map_width, h=map_height):
@@ -56,10 +56,10 @@ class Shipwreck(Map):
         self.name = self.name.replace("Test Ship", f'Exodus-{model}')
 
         s = self.engine.ship_chassis[model]
-        self.engine.Clear(' ', (self.engine.Color.WHITE, self.engine.Color.BLACK), scr = self.data)
+        self.engine.Clear(' ', (self.engine.Color.WHITE, self.engine.Color.BACKGROUND), scr = self.data)
         self.engine.BlitBuffer(s, x := self.width // 2 - s.width // 2, y := self.height // 2 - s.height // 2, scr=self.data)
 
-        self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BLACK), scr = self.data)
+        self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BACKGROUND), scr = self.data)
 
         self.entities = s.entities
 
@@ -94,4 +94,4 @@ class Base(Map):
         self.exp_to_level_up = 5
     
     def generate(self):
-        self.engine.Clear('.', (self.planet.overworld.GetAt(self.x, self.y).fg, self.engine.Color.BLACK), self.data)
+        self.engine.Clear('.', (self.planet.overworld.GetAt(self.x, self.y).fg, self.engine.Color.BACKGROUND), self.data)

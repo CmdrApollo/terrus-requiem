@@ -27,7 +27,7 @@ class Entity:
 
 class Door(Entity):
     def __init__(self, x, y, locked = False, char = None, c_pair = None):
-        super().__init__(char if char else '+', c_pair if c_pair else (PyneEngine.Color.BROWN, PyneEngine.Color.BLACK), x, y)
+        super().__init__(char if char else '+', c_pair if c_pair else (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND), x, y)
         self.locked = locked
         self.solid = True
         self.og_char = copy(char)
@@ -47,7 +47,7 @@ class Door(Entity):
 
 class Hatch(Door):
     def __init__(self, x, y, locked = False):
-        super().__init__(x, y, locked, '%', (PyneEngine.Color.GRAY, PyneEngine.Color.BLACK))
+        super().__init__(x, y, locked, '%', (PyneEngine.Color.GRAY, PyneEngine.Color.BACKGROUND))
 
 class BasicEnemy(Entity):
     def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, char, c_pair):
@@ -117,7 +117,7 @@ class BasicEnemy(Entity):
 
 class CrazedHuman(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'c', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BLACK))
+        super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'c', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BACKGROUND))
 
 class Player:
     def __init__(self, engine, x, y):

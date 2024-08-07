@@ -109,9 +109,9 @@ class Planet:
 
                         self.areas.append(Settlement(generate_settlement_name(), self, self.engine, x, y))
 
-                engine.DrawChar(char, (color, engine.Color.BLACK), x, y, self.overworld)
+                engine.DrawChar(char, (color, engine.Color.BACKGROUND), x, y, self.overworld)
 
         # the starting planet gets an extra hand-placed shipwreck
         if self.name == "XA-B1-12":
-            engine.DrawChar('x', (PyneEngine.Color.GRAY, engine.Color.BLACK), 13, 15, self.overworld)
+            engine.DrawChar('x', (PyneEngine.Color.GRAY, engine.Color.BACKGROUND), 13, 15, self.overworld)
             self.areas.append(Shipwreck(f"Shipwreck of the {generate_ship_name()}", self, self.engine, 13, 15))

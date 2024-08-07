@@ -31,7 +31,7 @@ class PyneEngine:
             self.width = width
             self.height = height
 
-            self.data: list[ScrElement] = [ScrElement(None, PyneEngine.Color.WHITE, PyneEngine.Color.BLACK) for _ in range(self.width * self.height)]
+            self.data: list[ScrElement] = [ScrElement(None, PyneEngine.Color.WHITE, PyneEngine.Color.BACKGROUND) for _ in range(self.width * self.height)]
 
             self.p = lambda x, y: y * self.width + x
         
@@ -67,7 +67,7 @@ class PyneEngine:
         self._font = pygame.font.Font(font, point)
         self._point = point
 
-        self._single_char_size = pygame.Vector2(self._font.render(' ', True, self.Color.BLACK).get_size())
+        self._single_char_size = pygame.Vector2(self._font.render(' ', True, self.Color.BACKGROUND).get_size())
 
         self._scr_buf = self.Buffer(self._width, self._height)
 
@@ -119,6 +119,8 @@ class PyneEngine:
     class Color:
         WHITE = '#ffffff'
         BLACK = '#000000'
+        
+        BACKGROUND = '#000000'
 
         RED = '#ff0000'
         GREEN = '#00ff00'
@@ -326,7 +328,10 @@ class PyneEngine:
 
         run = True
         clock = pygame.time.Clock()
-
+        
+        if os.path.exists('icon.bmp'):
+            pygame.display.set_icon(pygame.image.load_basic('icon.bmp'))
+            
         while run:
             delta = clock.tick(30) / 1000
 
@@ -386,16 +391,16 @@ class PyneEngine:
                 else:
                     self._boot_timer = min(self._boot_timer + delta * 1.5, 5)
                 
-                self.Clear(' ', (self.Color.WHITE, self.Color.BLACK))
+                self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND))
                 
                 bt = (self._boot_timer / 5)
 
-                self.DrawTextLines(LOGO, (self.Color.BROWN, self.Color.BLACK), self._width // 2 - 5, int((self._height // 2 + 5) * bt) - 10)
-                self.DrawText("   ^^^^", (self.Color.GREEN, self.Color.BLACK), self._width // 2 - 5, int((self._height // 2 + 5) * bt) - 10)
-                self.DrawText("  ENGINE", (self.Color.GREEN, self.Color.BLACK), self._width // 2 - 5, self._height - int((self._height // 2) * bt) + 4)
+                self.DrawTextLines(LOGO, (self.Color.BROWN, self.Color.BACKGROUND), self._width // 2 - 5, int((self._height // 2 + 5) * bt) - 10)
+                self.DrawText("   ^^^^", (self.Color.GREEN, self.Color.BACKGROUND), self._width // 2 - 5, int((self._height // 2 + 5) * bt) - 10)
+                self.DrawText("  ENGINE", (self.Color.GREEN, self.Color.BACKGROUND), self._width // 2 - 5, self._height - int((self._height // 2) * bt) + 4)
 
                 if self._stall_timer > 0:
-                    self.DrawText(PYNE[int(((min(self._stall_timer, 3 - 1e-08) * 6) / 18) * len(PYNE))], (self.Color.GREEN, self.Color.BLACK), self._width // 2 - 2, self._height // 2 - 5)
+                    self.DrawText(PYNE[int(((min(self._stall_timer, 3 - 1e-08) * 6) / 18) * len(PYNE))], (self.Color.GREEN, self.Color.BACKGROUND), self._width // 2 - 2, self._height // 2 - 5)
         
             else:
                 if not self.OnUpdate(delta):

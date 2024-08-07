@@ -13,6 +13,7 @@ GAME_NAME = "Terrus Requiem"
 GAME_VERSION = "v0.0.1"
 
 main_menu = PyneEngine.Buffer(terminal_width, terminal_height)
+credits_screen = PyneEngine.Buffer(terminal_width, terminal_height)
 
 # If we move onto a tile that is non-descriptive, give the generic terrain description
 overworld_tile_descriptions = {
@@ -37,21 +38,22 @@ DEBUG = True
 
 class GameScene:
     MAIN_MENU = 0
+    CREDITS = 1
 
-    PLANET_OVERWORLD = 1
-    PLANET_AREA = 2
+    PLANET_OVERWORLD = 2
+    PLANET_AREA = 3
     
-    PLAYER_BASE = 3
+    PLAYER_BASE = 4
 
-    DUNGEON = 4
-    CAVE = 5
+    DUNGEON = 5
+    CAVE = 6
 
-    OUTER_SPACE = 6
+    OUTER_SPACE = 7
 
-    INVENTORY = 7
-    PLAYER_STATS = 8
+    INVENTORY = 8
+    PLAYER_STATS = 9
 
-    BASE_INFO = 9
+    BASE_INFO = 10
 
 class Actions:
     CLOSE_DOOR = 0
@@ -138,6 +140,41 @@ class Game(PyneEngine):
                 self.SetColor((self.Color.WHITE, self.Color.BLACK), x + i, y + j, scr = main_menu)
 
         self.DrawTextLines([GAME_VERSION], (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - 2, self.TerminalHeight() - 2, True, scr = main_menu)
+        
+        self.Clear(' ', (self.Color.WHITE, self.Color.BLACK), credits_screen)
+
+        self.DrawRect((self.Color.MAGENTA, self.Color.BLACK), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=credits_screen)
+        
+        self.DrawTextLines(t := [
+            r"  />  ___   ___   ___   __    ___   ___   ___  <\  ",
+            r" //  |   | |   | |   | |  \  | | | | | | |   |  \\ ",
+            r"<<   |     |___| |__   |   |   |     |   |___    >>",
+            r" \\  |     |  \  |     |   |   |     |       |  // ",
+            r"  \> |___| |   | |___| |___| |_|_|   |   |___| </  ",
+        ], (self.Color.WHITE, self.Color.BLACK), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2, scr = credits_screen)
+
+        for i in [0, 1, 2, 3, 47, 48, 49, 50]:
+            for j in range(5):
+                self.SetColor((self.Color.YELLOW, self.Color.BLACK), x + i, y + j, credits_screen)
+
+        self.DrawTextLines(lines := [
+            "z - Return",
+        ], (self.Color.YELLOW, self.Color.BLACK), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = credits_screen)
+
+        for i in range(3):
+            self.SetColor((self.Color.WHITE, self.Color.BLACK), x + i, y, scr = credits_screen)
+
+        self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BLACK), x := self.TerminalWidth() // 3, y := self.TerminalHeight() // 4 + 4, credits_screen)
+        self.DrawText(t := "Mélanie J.", (self.Color.WHITE, self.Color.BLACK), x - len(t) // 2, y + 1, credits_screen)
+        self.DrawText(t := "<The Creator>", (self.Color.GRAY, self.Color.BLACK), x - len(t) // 2, y + 2, credits_screen)
+
+        self.DrawChar('@', (self.Color.LIGHT_BLUE, self.Color.BLACK), x := (self.TerminalWidth() // 3) * 2, y := self.TerminalHeight() // 4 + 4, credits_screen)
+        self.DrawText(t := "Alex J.", (self.Color.WHITE, self.Color.BLACK), x - len(t) // 2, y + 1, credits_screen)
+        self.DrawText(t := "<The Design Helper>", (self.Color.GRAY, self.Color.BLACK), x - len(t) // 2, y + 2, credits_screen)
+
+        self.DrawChar('@', (self.Color.LIGHT_YELLOW, self.Color.BLACK), x := self.TerminalWidth() // 2, y := self.TerminalHeight() // 2 + 3, credits_screen)
+        self.DrawText(t := "Michael H.", (self.Color.WHITE, self.Color.BLACK), x - len(t) // 2, y + 1, credits_screen)
+        self.DrawText(t := "<The Emotional Support>", (self.Color.GRAY, self.Color.BLACK), x - len(t) // 2, y + 2, credits_screen)
 
         return True
     
@@ -297,8 +334,14 @@ class Game(PyneEngine):
                 if cache == 'p':
                     # TODO : switch this to character creation
                     self.current_scene = GameScene.PLANET_OVERWORLD
+                elif cache == 'c':
+                    self.current_scene = GameScene.CREDITS
                 elif cache == 'q':
                     return False
+            
+            case GameScene.CREDITS:
+                if cache == 'z':
+                    self.current_scene = GameScene.MAIN_MENU
 
             case GameScene.PLANET_OVERWORLD:
                 self.HandleMoveAndInteract()
@@ -445,6 +488,11 @@ class Game(PyneEngine):
             case GameScene.MAIN_MENU:
                 
                 self.BlitBuffer(main_menu, 0, 0)
+                return True
+            
+            case GameScene.CREDITS:
+                
+                self.BlitBuffer(credits_screen, 0, 0)
                 return True
 
             case GameScene.PLANET_OVERWORLD:

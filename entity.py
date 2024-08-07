@@ -110,14 +110,14 @@ class BasicEnemy(Entity):
         force_x = int(force_x + separation_x)
         force_y = int(force_y + separation_y)
 
-        if 0 <= self.x + force_x <= engine.current_map.width - 1 and solids[self.x + force_x, self.y]:
+        if 0 <= self.x + force_x <= engine.current_map.width  - 1 and solids[self.x + force_x, self.y]:
             self.x += force_x
         if 0 <= self.y + force_y <= engine.current_map.height - 1 and solids[self.x, self.y + force_y]:
             self.y += force_y
 
 class CrazedHuman(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'r', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BLACK))
+        super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'c', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BLACK))
 
 class Player:
     def __init__(self, engine, x, y):
@@ -128,14 +128,13 @@ class Player:
 
         self.sight_distance = 4
 
-        self.scrap = 100
         self.credits = 1000
 
-        self.strength = 5
-        self.intelligence = 5
-        self.dexterity = 5
-        self.perception = 5
         self.endurance = 5
+        self.dexterity = 5
+        self.intelligence = 5
+        self.perception = 5
+        self.strength = 5
 
         self.melee_weapon = MeleeWeapon("Club", MeleeWeaponType.BLUNT, Roll(1, 4, self.strength))
 

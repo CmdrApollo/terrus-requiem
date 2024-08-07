@@ -118,7 +118,7 @@ class PyneEngine:
 
     class Color:
         WHITE = '#ffffff'
-        BLACK = '#101010'
+        BLACK = '#000000'
 
         RED = '#ff0000'
         GREEN = '#00ff00'

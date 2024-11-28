@@ -107,7 +107,7 @@ class Planet:
                         char = 'o'
                         # Keep the color that has already been decided
 
-                        self.areas.append(Settlement(generate_settlement_name(), self, self.engine, x, y))
+                        self.areas.append(Yoore(self, self.engine, x, y))
 
                 engine.DrawChar(char, (color, engine.Color.BACKGROUND), x, y, self.overworld)
 

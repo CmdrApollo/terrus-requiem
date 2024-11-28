@@ -4,6 +4,7 @@ from entity import *
 from area_map import *
 from ship_chassis import *
 from utils import *
+from dialogue import DialogueManager
 
 import numpy as np
 import tcod.map
@@ -62,6 +63,8 @@ class Actions:
     # actions that require a direction
     CLOSE_DOOR = 0
 
+action_times = [ 75 ]
+
 class Game(PyneEngine):
     # name of the game and title of the window
     TITLE = GAME_NAME
@@ -84,9 +87,12 @@ class Game(PyneEngine):
         # used for the pseudo-state machine
         self.current_scene = GameScene.MAIN_MENU
 
-        # used for collisions things
+        # used for collisions and things
         self.current_map = None
         self.current_overlapping_element = None
+
+        # dialogue manager
+        self.dialogue_manager = DialogueManager()
 
         # the two lines at the top of the screen
         self.messages = []
@@ -99,6 +105,7 @@ class Game(PyneEngine):
 
         # flag for if the user has performed an action
         self.advance_time = False
+        self.action_time = 0
 
         # if the program should wait for a direction and what action it's waiting for
         # TODO: currently only close door action
@@ -275,16 +282,21 @@ class Game(PyneEngine):
                                 return e
 
             if allow_move:
+                self.advance_time = True
+                self.action_time = self.player.speed
+
+                if abs(attempt_move_x - self.player.x) and abs(attempt_move_y - self.player.y): # diagonal movement
+                    self.action_time = int( self.action_time * 1.4 )
+
                 self.player.x = attempt_move_x
                 self.player.y = attempt_move_y
-
-                self.advance_time = True
         
         return None
     
     def AdvanceTime(self):
         # TODO: make more advanced time system
         for e in self.current_map.entities:
+            e.waited_time += self.action_time
             e.OnMyTurn(self)
 
         self.advance_time = False
@@ -351,25 +363,31 @@ class Game(PyneEngine):
         # stores what unicode character has been pressed
         # obeys modifiers
         cache = self.TextCache() if self.HasTextCache() else None
+        
+        if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.BASE_INFO]:
+            if self.KeyPressed(pygame.K_z):
+                self.dialogue_manager.on_confirm()
+        
+        if self.current_scene == GameScene.MAIN_MENU:
+            if cache == 'p':
+                # TODO : switch this to character creation
+                self.current_scene = GameScene.PLANET_OVERWORLD
+            elif cache == 'c':
+                # move to credits scene
+                self.current_scene = GameScene.CREDITS
+            elif cache == 'q':
+                # quit the game
+                return False
+        elif self.current_scene == GameScene.CREDITS:
+            if cache == 'z':
+                # move back to main menu
+                self.current_scene = GameScene.MAIN_MENU
+
+        if self.dialogue_manager.has_dialogue():
+            return True
 
         # the dreaded switch case
         match self.current_scene:
-            case GameScene.MAIN_MENU:
-                if cache == 'p':
-                    # TODO : switch this to character creation
-                    self.current_scene = GameScene.PLANET_OVERWORLD
-                elif cache == 'c':
-                    # move to credits scene
-                    self.current_scene = GameScene.CREDITS
-                elif cache == 'q':
-                    # quit the game
-                    return False
-            
-            case GameScene.CREDITS:
-                if cache == 'z':
-                    # move back to main menu
-                    self.current_scene = GameScene.MAIN_MENU
-
             case GameScene.PLANET_OVERWORLD:
                 # we can move and interact in the overworld
                 self.HandleMoveAndInteract()
@@ -432,6 +450,8 @@ class Game(PyneEngine):
 
                                             self.advance_time = True
 
+                                            self.action_time = action_times[Actions.CLOSE_DOOR]
+
                                             self.GenerateSolidsMap()
                                     else:
                                         self.AddMessage("You can't close that!")
@@ -451,6 +471,7 @@ class Game(PyneEngine):
                     self.advance_time = True
 
                     move_interact_entity.PlayerMoveInteract(self, self.player)
+                    self.action_time = move_interact_entity.move_interact_time
                     
                     # remove the entity if it has marked itself for removal
                     # (usually upon death)
@@ -507,7 +528,7 @@ class Game(PyneEngine):
                         self.current_scene = GameScene.PLAYER_BASE
                     elif cache == 'n':
                         self.renaming_base = True
-        
+
         return True
     
     def DrawEntities(self):
@@ -525,11 +546,23 @@ class Game(PyneEngine):
             case GameScene.MAIN_MENU:
                 # blit the static menu buffer
                 self.BlitBuffer(main_menu, 0, 0)
+
+                for x in range(self.TerminalWidth() - 2):
+                    for y in range(self.TerminalHeight() - 2):
+                        if self.CharAt(x + 1, y + 1).symbol == " ":
+                            self.DrawChar('.', (random.choice([self.Color.DARK_CYAN, self.Color.VERY_DARK_CYAN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
+                
                 return True
             
             case GameScene.CREDITS:
                 # blit the static credits buffer
                 self.BlitBuffer(credits_screen, 0, 0)
+
+                for x in range(self.TerminalWidth() - 2):
+                    for y in range(self.TerminalHeight() - 2):
+                        if self.CharAt(x + 1, y + 1).symbol == " ":
+                            self.DrawChar('.', (random.choice([self.Color.DARK_MAGENTA, self.Color.VERY_DARK_MAGENTA, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
+                
                 return True
 
             case GameScene.PLANET_OVERWORLD:
@@ -614,59 +647,66 @@ class Game(PyneEngine):
 
                 self.DrawText(t := "n - Rename Base     z - Exit", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - (len(t) + 1), self.TerminalHeight() - 1)
 
+        show_dialogue = False
         if self.current_scene != GameScene.BASE_INFO:
+            show_dialogue = True
+
             # draw the '@' for the player
             self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BACKGROUND), self.player.x, self.player.y, self.game_window)
 
-        if self.current_map:
-            # compute fov
-            fov = tcod.map.compute_fov(self.solids, (self.player.y, self.player.x), 3 * self.player.sight_distance, algorithm=tcod.constants.FOV_DIAMOND)
+            if self.current_map:
+                # compute fov
+                fov = tcod.map.compute_fov(self.solids, (self.player.y, self.player.x), self.player.sight_distance, algorithm=tcod.constants.FOV_DIAMOND)
 
-            active_visibility = [False for _ in range(len(self.current_map.visibility))]
+                active_visibility = [False for _ in range(len(self.current_map.visibility))]
 
-            # black out or darken cells based on the visibility
-            for x in range(self.game_window.width):
-                for y in range(self.game_window.height):
-                    if fov[y, x] and self.current_map:
-                        self.current_map.visibility[y * self.current_map.width + x] = True
-                        active_visibility[y * self.current_map.width + x] = True
-                    
-                    if self.current_map and not self.current_map.visibility[y * self.current_map.width + x]:
-                        self.DrawChar('?', (self.Color.VERY_DARK_GRAY, self.Color.BACKGROUND), x, y, self.game_window)
-                    
-                    if self.current_map and self.current_map.visibility[y * self.current_map.width + x] and not active_visibility[y * self.current_map.width + x]:
-                        e = self.game_window.GetAt(x, y)
-                        self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x, y, self.game_window)
+                # black out or darken cells based on the visibility
+                for x in range(self.game_window.width):
+                    for y in range(self.game_window.height):
+                        if fov[y, x] and self.current_map:
+                            self.current_map.visibility[y * self.current_map.width + x] = True
+                            active_visibility[y * self.current_map.width + x] = True
+                        
+                        if self.current_map and not self.current_map.visibility[y * self.current_map.width + x]:
+                            self.DrawChar('?', (self.Color.VERY_DARK_GRAY, self.Color.BACKGROUND), x, y, self.game_window)
+                        
+                        if self.current_map and self.current_map.visibility[y * self.current_map.width + x] and not active_visibility[y * self.current_map.width + x]:
+                            e = self.game_window.GetAt(x, y)
+                            self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x, y, self.game_window)
+
+            if len(self.messages):
+                # If we have messages, display the first one
+                msg = self.messages[0] + (' (more)' if len(self.messages) != 1 else '')
+
+                # split a line that's too long into two lines
+                if len(msg) > self.TerminalWidth() - 1:
+                    lines = ['']
+                    size = 0
+
+                    for el in msg.split(' '):
+                        lines[-1] += el + ' '
+
+                        size += len(el) + 1
+
+                        if size > self.TerminalWidth() - 5:
+                            lines.append('')
+                            size = 0
+                else:
+                    lines = [msg]
+
+                # draw the text
+                self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
+            elif self.current_scene == GameScene.PLANET_OVERWORLD:
+                # Otherwise, attempt to show the generic description of the tile we are on
+                if self.current_overlapping_element.symbol in overworld_tile_descriptions:
+                    self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
+
 
         # put the game window onto the main screen
         self.BlitBuffer(self.game_window, 0, 2)
 
-        if len(self.messages):
-            # If we have messages, display the first one
-            msg = self.messages[0] + (' (more)' if len(self.messages) != 1 else '')
-
-            # split a line that's too long into two lines
-            if len(msg) > self.TerminalWidth() - 1:
-                lines = ['']
-                size = 0
-
-                for el in msg.split(' '):
-                    lines[-1] += el + ' '
-
-                    size += len(el) + 1
-
-                    if size > self.TerminalWidth() - 5:
-                        lines.append('')
-                        size = 0
-            else:
-                lines = [msg]
-
-            # draw the text
-            self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
-        elif self.current_scene == GameScene.PLANET_OVERWORLD:
-            # Otherwise, attempt to show the generic description of the tile we are on
-            if self.current_overlapping_element.symbol in overworld_tile_descriptions:
-                self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
+        if show_dialogue:
+            self.dialogue_manager.draw(self)
 
         if DEBUG:
             # highlight the mouse pos and show the pos x and y

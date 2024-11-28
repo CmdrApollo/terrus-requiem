@@ -46,6 +46,11 @@ class Settlement(Map):
 
         self.engine.ReplaceChar(' ', '.', (self.planet.color_scheme.plains, self.engine.Color.BACKGROUND), scr = self.data)
 
+class Yoore(Settlement):
+    def __init__(self, planet, engine, w=map_width, h=map_height):
+        super().__init__("Yoore", planet, engine, w, h)
+        self.entities.append(Zaram(12, 12))
+
 class Shipwreck(Map):
     def __init__(self, name, planet, engine, w=map_width, h=map_height):
         super().__init__(name, planet, engine, w, h)

@@ -95,6 +95,8 @@ class PyneEngine:
 
         self.lines = pygame.image.load('scanlines_full.png').convert_alpha()
 
+        pygame.key.set_repeat(500, 75)
+
     def LoadAudio(self, name, path):
         self._audio_handler.update_sounds({ name: pygame.mixer.Sound(os.path.join(*path)) })
 
@@ -307,7 +309,7 @@ class PyneEngine:
         return pygame.time.get_ticks() / 1000
 
     def CharAt(self, x, y):
-        return self._scr_buf[y * self._width + x]
+        return self._scr_buf.data[y * self._width + x]
 
     def display_buffer(self):
         for x in range(self._width):

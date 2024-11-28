@@ -18,12 +18,35 @@ class Entity:
         self.path = None
 
         self.to_remove = False
-    
+
+        self.move_interact_time = 100
+
+        self.waited_time = 0
+
     def PlayerMoveInteract(self, engine, player):
         pass
 
     def OnMyTurn(self, engine):
         pass
+
+# ==============================================================================================================
+
+class ShipPart(Entity):
+    def __init__(self, char, c_pair, x, y):
+        super().__init__(char, c_pair, x, y)
+
+        self.solid = True
+
+        self.move_interact_time = 0
+
+    def PlayerMoveInteract(self, engine, player):
+        engine.AddMessage(f"You bonked the {self.name}! You bastard!")
+
+class ControlPanel(ShipPart):
+    def __init__(self, x, y):
+        super().__init__("M", (PyneEngine.Color.LIGHT_CYAN, PyneEngine.Color.BACKGROUND), x, y)
+
+        self.name = "Control Panel"
 
 class Door(Entity):
     def __init__(self, x, y, locked = False, char = None, c_pair = None):
@@ -31,6 +54,8 @@ class Door(Entity):
         self.locked = locked
         self.solid = True
         self.og_char = copy(char)
+
+        self.move_interact_time = 100 # time to open door
 
     def PlayerMoveInteract(self, engine, player):
         if self.repr.symbol == '/':
@@ -49,6 +74,8 @@ class Hatch(Door):
     def __init__(self, x, y, locked = False):
         super().__init__(x, y, locked, '%', (PyneEngine.Color.GRAY, PyneEngine.Color.BACKGROUND))
 
+# ==============================================================================================================
+
 class BasicEnemy(Entity):
     def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, char, c_pair):
         super().__init__(char, c_pair, x, y)
@@ -62,6 +89,10 @@ class BasicEnemy(Entity):
 
         self.is_enemy = True
 
+        self.speed = 175
+
+        self.move_interact_time = 100 # time to attack
+
     def Kill(self):
         self.to_remove = True
 
@@ -69,6 +100,12 @@ class BasicEnemy(Entity):
         player.AttackMelee(self)
 
     def OnMyTurn(self, engine):
+        while self.waited_time >= self.speed:
+            self.waited_time -= self.speed
+            
+            self.OnMove(engine)
+
+    def OnMove(self, engine):
         solids = engine.solids
 
         solids = np.transpose(solids, (1, 0))
@@ -118,6 +155,12 @@ class BasicEnemy(Entity):
 class CrazedHuman(BasicEnemy):
     def __init__(self, x, y):
         super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'c', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BACKGROUND))
+        
+class Rat(BasicEnemy):
+    def __init__(self, x, y):
+        super().__init__(30, 30, "Rat", 0.1, x, y, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+
+# ==============================================================================================================
 
 class Player:
     def __init__(self, engine, x, y):
@@ -125,8 +168,6 @@ class Player:
 
         self.x = x
         self.y = y
-
-        self.sight_distance = 4
 
         self.credits = 1000
 
@@ -136,7 +177,11 @@ class Player:
         self.perception = 5
         self.strength = 5
 
+        self.sight_distance = 10 + self.perception
+
         self.melee_weapon = MeleeWeapon("Club", MeleeWeaponType.BLUNT, Roll(1, 4, self.strength))
+
+        self.speed = 100
 
     def ChanceToHitMelee(self):
         return + (self.perception / 10)
@@ -162,3 +207,57 @@ class Player:
                     entity.Kill()
         else:
             self.engine.AddMessage(f"You missed the {entity.name}.")
+
+# ==============================================================================================================
+
+class NPC(Entity):
+    def __init__(self, name, dialogue, color, x, y):
+        super().__init__('@', (color, PyneEngine.Color.BLACK), x, y)
+        self.name = name
+
+        d = [[self.name] + x for x in dialogue]
+
+        self.dialogue = d
+    
+        self.is_enemy = False
+
+        self.move_interact_time = 100 # time to talk
+
+    def Kill(self):
+        self.to_remove = True
+
+    def PlayerMoveInteract(self, engine, player):
+        for t in self.dialogue:
+            engine.dialogue_manager.queue_text(t)
+
+class Zaram(NPC):
+    def __init__(self, x, y):
+        super().__init__("Zaram", 
+                        [
+                            [
+                                "Hello, traveler.",
+                                "I am Zaram, and this is Yoore.",
+                                "We are a humble community that pride ourselves",
+                                "on our hunting and gathering abilities."
+                            ],
+                            [
+                                "What's this?"
+                                "... You wish to leave XA-B1-12?",
+                                "In that case you will need a ship, my friend."
+                            ],
+                            [
+                                "The easiest way to get a ship is to build one, I'm",
+                                "afraid. You'll need to scavenge the parts from the",
+                                "various shipwrecks scattered across the surface"
+                            ],
+                            [
+                                "If you are up for the task, I can point you in the",
+                                "direction of the nearest one. Be warned, however,",
+                                "that a shipwreck is a dangerous place. Many",
+                                "unsavory individuals tend to find refuge within",
+                                "them."
+                            ],
+                            [
+                                "I wish you good luck on your travels, my friend!"
+                            ]
+                        ], PyneEngine.Color.LIGHT_RED, x, y)

@@ -21,6 +21,8 @@ def generate_chassis_Z800(engine):
     engine.DrawHLine((engine.Color.GRAY, engine.Color.BACKGROUND), 40, 10, 50, '.', scr=buffer)
     engine.DrawHLine((engine.Color.GRAY, engine.Color.BACKGROUND), 40, 11, 50, '.', scr=buffer)
 
+    buffer.entities.append(ControlPanel(40, 4))
+
     wallify(buffer, engine)
 
     final = crop(buffer, engine)
@@ -55,6 +57,8 @@ def generate_chassis_X40(engine):
 
     buffer.entities.append(Hatch(9, 5))
     buffer.entities.append(Hatch(9, 6))
+
+    buffer.entities.append(ControlPanel(27, 5))
 
     wallify(buffer, engine)
 

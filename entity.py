@@ -229,6 +229,19 @@ class NPC(Entity):
     def PlayerMoveInteract(self, engine, player):
         for t in self.dialogue:
             engine.dialogue_manager.queue_text(t)
+    
+    def OnMyTurn(self, engine):
+        # TODO FIX THIS + IMPLEMENT UNIVERSAL COLLISION DETECTION
+        direction = random.randint(0, 3)
+        match direction:
+            case 0:
+                self.y -=1
+            case 1:
+                self.x += 1
+            case 2:
+                self.y += 1
+            case 3:
+                self.x -= 1
 
 class Zaram(NPC):
     def __init__(self, x, y):

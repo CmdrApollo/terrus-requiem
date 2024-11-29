@@ -232,16 +232,17 @@ class NPC(Entity):
     
     def OnMyTurn(self, engine):
         # TODO FIX THIS + IMPLEMENT UNIVERSAL COLLISION DETECTION
-        direction = random.randint(0, 3)
-        match direction:
-            case 0:
-                self.y -=1
-            case 1:
-                self.x += 1
-            case 2:
-                self.y += 1
-            case 3:
-                self.x -= 1
+        # direction = random.randint(0, 3)
+        # match direction:
+        #     case 0:
+        #         self.y -=1
+        #     case 1:
+        #         self.x += 1
+        #     case 2:
+        #         self.y += 1
+        #     case 3:
+        #         self.x -= 1
+        pass
 
 class Zaram(NPC):
     def __init__(self, x, y):
@@ -249,25 +250,26 @@ class Zaram(NPC):
                         [
                             [
                                 "Hello, traveler.",
-                                "I am Zaram, and this is Yoore.",
+                                "I am <#FF8080>Zaram</>, and this is <#FF8080>Yoore</>.",
                                 "We are a humble community that pride ourselves",
                                 "on our hunting and gathering abilities."
                             ],
                             [
                                 "What's this?"
-                                "... You wish to leave XA-B1-12?",
-                                "In that case you will need a ship, my friend."
+                                "... You wish to leave <#FFFF80>XA-B1-12</>?",
+                                "In that case you will need a <#FF8080>ship</>, my friend."
                             ],
                             [
-                                "The easiest way to get a ship is to build one, I'm",
+                                "The easiest way to get a <#FF8080>ship</> is to build one, I'm",
                                 "afraid. You'll need to scavenge the parts from the",
-                                "various shipwrecks scattered across the surface"
+                                "various <#FFFF80>shipwrecks</> scattered across the surface of",
+                                "the planet."
                             ],
                             [
                                 "If you are up for the task, I can point you in the",
                                 "direction of the nearest one. Be warned, however,",
-                                "that a shipwreck is a dangerous place. Many",
-                                "unsavory individuals tend to find refuge within",
+                                "that a <#FFFF80>shipwreck</> is a dangerous place. Many an",
+                                "unsavory individual tend to find refuge within",
                                 "them."
                             ],
                             [

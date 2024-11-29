@@ -7,7 +7,7 @@ class DialogueManager:
         self.border_color = border_color
 
     def calculate_bounds(self):
-        return max([len(x) for x in self.queued_text[0]]), len(self.queued_text[0])
+        return max([len(self.remove_tags(x)) for x in self.queued_text[0]]), len(self.queued_text[0])
 
     def on_confirm(self):
         if len(self.queued_text):
@@ -18,6 +18,48 @@ class DialogueManager:
 
     def has_dialogue(self):
         return bool(len(self.queued_text))
+
+    def remove_tags(self, text):
+        final = ""
+        drawing = True
+        for char in text:
+            if char == "<":
+                drawing = False
+                continue
+            elif char == ">":
+                drawing = True
+                continue
+                
+            if drawing:
+                final += char
+            
+        return final
+
+
+    def draw_tagged_line(self, line, engine: PyneEngine, x, y, base_color=PyneEngine.Color.WHITE):
+        fline = ""
+
+        color = base_color
+
+        drawing = True
+        cx = x
+        for char in line:
+            if char == "<":
+                drawing = False
+                color = ""
+                continue
+            elif char == ">":
+                drawing = True
+                if '/' in color:
+                    color = base_color
+                continue
+
+            if drawing:
+                engine.DrawChar(char, (color, PyneEngine.Color.BLACK), cx, y)
+                fline += char
+                cx += 1
+            else:
+                color += char
 
     def draw(self, engine: PyneEngine):
         if self.has_dialogue():
@@ -31,7 +73,9 @@ class DialogueManager:
             engine.DrawRect((self.border_color, engine.Color.BLACK), x, y, w, h)
             engine.DrawText(t := self.queued_text[0][0], (self.text_color, engine.Color.BLACK), x + w // 2 - 1 - len(t) // 2, y + 1)
             engine.DrawHLine((self.text_color, engine.Color.BLACK), x + 1, y + 2, x + w)
-            engine.DrawTextLines(self.queued_text[0][1:], (self.text_color, engine.Color.BLACK), x + 1, y + 3)
+
+            for i, line in enumerate(self.queued_text[0][1:]):
+                self.draw_tagged_line(line, engine, x + 1, i + y + 3, self.text_color)
 
             if len(self.queued_text) > 1 and (pygame.time.get_ticks() // 750) % 2:
                 engine.DrawChar(">", (self.text_color, engine.Color.BLACK), x + w - 1, y + 1)

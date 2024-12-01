@@ -7,6 +7,7 @@ from ship_chassis import *
 from utils import *
 from dialogue import DialogueManager
 from homeworld import *
+from character_class import *
 
 import numpy as np
 import tcod.map
@@ -347,12 +348,12 @@ class TerrusRequiem(PyneEngine):
         self.DrawTextLines([
             "Character Creation                                          Choose a Class",
             "                                                                          ",
-            "[aA] - Noble                                                              ",
-            "[mM] - Scoundrel                                                          ",
-            "[tT] - Merchant                                                           ",
-            "[zZ] - Mechanic                                                           ",
             "                                                                          ",
             "                                                                          ",
+            "[nN] - Noble                                                              ",
+            "[sS] - Scoundrel                                                          ",
+            "[mM] - Merchant                                                           ",
+            "[cC] - Mechanic                                                           ",
             "                                                                          ",
             "                                                                          ",
             "                                                                          ",
@@ -370,6 +371,36 @@ class TerrusRequiem(PyneEngine):
             "                                                                          ",
             "                                                                          ",
         ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen2)
+
+        # === GENERATE CREATION 2 ===
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen3)
+        self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen3)
+        self.DrawTextLines([
+            "Character Creation                                         Enter Your Name",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+        ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen3)
 
         self.LoadOverworld()
 
@@ -795,8 +826,34 @@ class TerrusRequiem(PyneEngine):
                             self.player.homeworld = Space()
                             self.creation_screen += 1
                     case 1:
-                        pass
-                    
+                        if cache == 'n':
+                            self.player.character_class = Noble()
+                            self.creation_screen += 1
+                        elif cache == 'N':
+                            pass
+                        elif cache == 's':
+                            self.player.character_class = Scoundrel()
+                            self.creation_screen += 1
+                        elif cache == 'S':
+                            pass
+                        elif cache == 'm':
+                            self.player.character_class = Merchant()
+                            self.creation_screen += 1
+                        elif cache == 'M':
+                            pass
+                        elif cache == 'c':
+                            self.player.character_class = Mechanic()
+                            self.creation_screen += 1
+                        elif cache == 'C':
+                            pass
+                    case 2:
+                        self.HandleTextInput()
+                        
+                        if self.KeyPressed(K_RETURN):
+                            self.player.name = self.user_text_input
+                            self.creation_screen = 0
+                            self.current_scene = GameScene.PLANET_OVERWORLD
+
         return True
     
     def DrawEntities(self):
@@ -930,6 +987,17 @@ class TerrusRequiem(PyneEngine):
                         if self.CharAt(x + 1, y + 1).symbol == " ":
                             self.DrawChar('.', (random.choice([self.Color.DARK_GREEN, self.Color.VERY_DARK_GREEN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
                 
+                match self.creation_screen:
+                    case 0:
+                        pass
+                    case 1:
+                        self.DrawText(f"Homeworld - {self.player.homeworld.name}", (self.Color.WHITE, self.Color.BACKGROUND), 1, 3)
+                    case 2:
+                        self.DrawText(f"Homeworld - {self.player.homeworld.name}", (self.Color.WHITE, self.Color.BACKGROUND), 1, 3)
+                        self.DrawText(f"Class - {self.player.character_class.name}", (self.Color.WHITE, self.Color.BACKGROUND), 1, 4)
+                        self.DrawText(self.user_text_input + "_", (self.Color.WHITE, self.Color.BACKGROUND), 1, 6)
+
+
                 show_dialogue = True
             
         if self.current_scene not in [GameScene.BASE_INFO, GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS, GameScene.CHARACTER_CREATION]:

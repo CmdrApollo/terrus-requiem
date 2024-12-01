@@ -33,6 +33,8 @@ class Player:
 
                 self.engine.AddMessage(f"The {entity.name} dodged your attack!")
             else:
+                self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
+
                 dmg = self.melee_weapon.roll_damage(self.strength)
 
                 self.engine.AddMessage(f"You deal {dmg} damage to the {entity.name}!")

@@ -337,7 +337,7 @@ class PyneEngine:
         print(self._single_char_size.y / self._single_char_size.x)
 
         while run:
-            delta = clock.tick(0) / 1000
+            delta = clock.tick(30) / 1000
 
             if delta:
                 pygame.display.set_caption(f"{self.TITLE} | Pyne Engine v{VERSION} - {( 1 / delta ):.2f} FPS")

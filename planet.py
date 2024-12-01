@@ -122,5 +122,5 @@ class PlanetXAB112(Planet):
         engine.DrawChar('x', (PyneEngine.Color.GRAY, engine.Color.BACKGROUND), 13, 15, self.overworld)
         self.areas.append(Shipwreck(f"Shipwreck of the {generate_ship_name()}", self, self.engine, 13, 15))
 
-        engine.DrawChar('o', (PyneEngine.Color.DARK_GREEN, engine.Color.BACKGROUND), 27, 12, self.overworld)
-        self.areas.append(Yoore(self, self.engine, 27, 12))
+        engine.DrawChar('o', (PyneEngine.Color.LIGHT_YELLOW, engine.Color.BACKGROUND), 35, 17, self.overworld)
+        self.areas.append(Yoore(self, self.engine, 35, 17))

@@ -20,6 +20,9 @@ credits_screen = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
+creation_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
+creation_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
+creation_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
 
 # If we move onto a tile that is non-descriptive, give the generic terrain description
 overworld_tile_descriptions = {
@@ -64,6 +67,8 @@ class GameScene:
     BASE_INFO = 10
 
     HELP = 11
+
+    CHARACTER_CREATION = 12
 
 class Actions:
     # actions that require a direction
@@ -120,14 +125,21 @@ class TerrusRequiem(PyneEngine):
 
         self.prev_scene = None
         self.help_screen = 0
-
-        self.LoadOverworld()
+        self.creation_screen = 0
 
     # add messages to the queue
     def AddMessage(self, message):
         self.messages.append(message)
 
     def OnConstruct(self):
+        self.LoadAudio("main_theme", ["assets", "audio", "main_theme.wav"])
+
+        self.LoadAudio("hit_1", ["assets", "audio", "hit", "hit_1.wav"])
+        self.LoadAudio("hit_2", ["assets", "audio", "hit", "hit_2.wav"])
+        self.LoadAudio("hit_3", ["assets", "audio", "hit", "hit_3.wav"])
+
+        self.PlaySong("main_theme")
+
         # === GENERATE MAIN MENU ===
 
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), main_menu)
@@ -209,25 +221,25 @@ class TerrusRequiem(PyneEngine):
 
         # === GENERATE HELP 1 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen1)
-        self.DrawText(t := "Help 1", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen1)
+        self.DrawText(t := "Help 1/2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen1)
         self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen1)
         self.DrawTextLines([
-            "General ========================================================",
-            "[h] - Help                      [arrows/numpad] - Move          ",
-            "[>] - Enter Area                [<] - Leave Area                ",
-            "[z] - Close Menu                                                ",
-            "                                                                ",
-            "Overworld ======================================================",
-            "[b] - Place Base                                                ",
-            "                                                                ",
-            "Help ===========================================================",
-            "[1/2/3] - Change Screen         [z] - Return to Game            ",
-            "                                                                ",
-            "Planet Base ====================================================",
+            "General =======================|================================",
+            "[h] - Help                     |[arrows/numpad] - Move          ",
+            "[>] - Enter Area               |[<] - Leave Area                ",
+            "[z] - Close Menu               |                                ",
+            "                               |                                ",
+            "Overworld =====================|================================",
+            "[b] - Place Base               |                                ",
+            "                               |                                ",
+            "Help ==========================|================================",
+            "[1/2] - Change Screen          |[z] - Return to Game            ",
+            "                               |                                ",
+            "Planet Base ===================|================================",
             "[b] - Base Info Screen         |[<] - Leave Base                ",
             "                               |                                ",
-            "                               |                                ",
-            "                               |                                ",
+            "Base Info =====================|================================",
+            "[n] - Rename Base              |[z] - Return to Game            ",
             "                               |                                ",
             "                               |                                ",
             "                               |                                ",
@@ -239,12 +251,98 @@ class TerrusRequiem(PyneEngine):
         ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen1)
         # === GENERATE HELP 2 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen2)
-        self.DrawText(t := "Help 2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen2)
+        self.DrawText(t := "Help 2/2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen2)
+        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen2)
+        self.DrawTextLines([
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+        ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen2)
         # === GENERATE HELP 3 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen3)
-        self.DrawText(t := "Help 3", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen3)
+        self.DrawText(t := "Help 3/2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen3)
+        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen3)
+        self.DrawTextLines([
+            "Hey! Thank you so so much for  |                                ",
+            "playing my game, it really     |                                ",
+            "means so much to me! This game |                                ",
+            "has been a really important    |                                ",
+            "part of my life for a while now|                                ",
+            "and I love that I get to share |                                ",
+            "it with you! As I'm writing    |                                ",
+            "this, the game is still in     |                                ",
+            "early stages (the code is only |                                ",
+            "around 2000 lines so far), but |                                ",
+            "I'm still really happy with the|                                ",
+            "progress that I've made. I     |                                ",
+            "can't wait to finish this game |                                ",
+            "and release it to the world.   |                                ",
+            "This whole experience has      |                                ",
+            "already shaped me as a person  |                                ",
+            "and I can't wait to see where I|                                ",
+            "go from here. I love you all   |                                ",
+            "and wish you all the best of   |                                ",
+            "luck!                          |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                         -Elly |                                ",
+            "                               |                                ",
+        ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen3)
+
+        # === GENERATE CREATION 1 ===
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen1)
+        self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen1)
+        self.DrawTextLines([
+            "Character Creation                                      Choose a Homeworld",
+            "                                                                          ",
+            "[aA] - Ajaet                                                              ",
+            "[mM] - Mokra                                                              ",
+            "[tT] - Terrus                                                             ",
+            "[zZ] - Zandar                                                             ",
+            "[sS] - Space-Born                                                         ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+        ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen1)
 
         self.LoadOverworld()
+
+        self.current_scene = GameScene.MAIN_MENU
         
         return True
     
@@ -432,7 +530,7 @@ class TerrusRequiem(PyneEngine):
         if self.current_scene == GameScene.MAIN_MENU:
             if cache == 'p':
                 # TODO : switch this to character creation
-                self.current_scene = GameScene.PLANET_OVERWORLD
+                self.current_scene = GameScene.CHARACTER_CREATION
             elif cache == 'c':
                 # move to credits scene
                 self.current_scene = GameScene.CREDITS
@@ -608,6 +706,47 @@ class TerrusRequiem(PyneEngine):
                     elif cache == 'n':
                         self.renaming_base = True
 
+            case GameScene.CHARACTER_CREATION:
+                if cache == 'A':
+                    self.dialogue_manager.queue_text([
+                        "Ajaet (CT-98-4)",
+                        "The <#ffff80>Aji</> are the only known sentient race in the universe",
+                        "other than Terrestrians. What they lack in physical ability,",
+                        "they more than make up for in raw intellect.",
+                        "(+1 INTELLIGENCE / -1 ENDURANCE)"
+                    ])
+                elif cache == 'M':
+                    self.dialogue_manager.queue_text([
+                        "Mokra (B2-7Z-1)",
+                        "<#ffff80>Mokrians</> are know for their deep knowledge of",
+                        "flora and fauna, their ability to adapt to wild environments,",
+                        "and their seeming \"6th sense\" or ability to seem to always",
+                        "know when something is fishy.",
+                        "(TRAPFINDER trait / +1 PERCEPTION)"
+                    ])
+                elif cache == 'T':
+                    self.dialogue_manager.queue_text([
+                        "Terrus (N6-JB-3)",
+                        "<#ffff80>Terrestrians</> are known for being highly adaptive",
+                        "to nearly any environment.",
+                        "(STURDY trait)"
+                    ])
+                elif cache == 'Z':
+                    self.dialogue_manager.queue_text([
+                        "Zandar (MD-48-6)",
+                        "<#ffff80>Zandari</> are known for their increased mobility in water",
+                        "and their high lung capacity.",
+                        "(CONTROLLED BREATHING trait / +5 SWIMMING skill)"
+                    ])
+                elif cache == 'S':
+                    self.dialogue_manager.queue_text([
+                        "Space",
+                        "Hailing from the depths of space, the <#ffff80>Space-Born</> are used to low",
+                        "gravity and are universally handy with computers and spaceship",
+                        "mechanics.",
+                        "(CHILD OF SPACE trait / +5 ELECTRONICS skill)"
+                    ])
+
         return True
     
     def DrawEntities(self):
@@ -616,6 +755,8 @@ class TerrusRequiem(PyneEngine):
             self.DrawChar(e.repr.symbol, (e.repr.fg, e.repr.bg), e.x, e.y, self.game_window)
 
     def OnDraw(self):
+        show_dialogue = False
+
         # clear the screen and the game window
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND))
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window)
@@ -730,9 +871,18 @@ class TerrusRequiem(PyneEngine):
                 self.BlitBuffer([help_screen1, help_screen2, help_screen3][self.help_screen], 0, 0)
                 
                 return True
+            
+            case GameScene.CHARACTER_CREATION:
+                self.BlitBuffer([creation_screen1, creation_screen2, creation_screen3][self.creation_screen], 0, 0)
 
-        show_dialogue = False
-        if self.current_scene not in [GameScene.BASE_INFO, GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS]:
+                for x in range(self.TerminalWidth() - 2):
+                    for y in range(self.TerminalHeight() - 2):
+                        if self.CharAt(x + 1, y + 1).symbol == " ":
+                            self.DrawChar('.', (random.choice([self.Color.DARK_GREEN, self.Color.VERY_DARK_GREEN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
+                
+                show_dialogue = True
+            
+        if self.current_scene not in [GameScene.BASE_INFO, GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS, GameScene.CHARACTER_CREATION]:
             show_dialogue = True
 
             # draw the '@' for the player
@@ -788,8 +938,9 @@ class TerrusRequiem(PyneEngine):
                 except AttributeError:
                     pass
 
-        # put the game window onto the main screen
-        self.BlitBuffer(self.game_window, 0, 2)
+        if self.current_scene != GameScene.CHARACTER_CREATION:
+            # put the game window onto the main screen
+            self.BlitBuffer(self.game_window, 0, 2)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)

@@ -25,8 +25,12 @@ class MeleeWeapon(Item):
         self.weapon_type = weapon_type
         self.roll = roll
     
-    def roll_damage(self):
-        return self.roll.roll()
+    def roll_damage(self, external_modifier=0):
+        return self.roll.roll() + external_modifier
+    
+class Club(MeleeWeapon):
+    def __init__(self):
+        super().__init__("Club", ItemClass.MELEE_WEAPON, Roll(2, 4, 4)) # 2d4+4
 
 class RangedWeapon(Item):
     def __init__(self, name: str, weapon_type: int, roll: Roll):

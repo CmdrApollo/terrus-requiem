@@ -52,13 +52,13 @@ class PyneEngine:
 
         point = 12
         for _ in range(0x40):
-            s = pygame.font.Font(font, point).size(' ')
+            s = pygame.font.Font(font, point).size('M')
             
             if s[1] * terminal_height == target_size[1]:
                 break
 
             elif s[1] * terminal_height < target_size[1]:
-                if pygame.font.Font(font, point + 1).size(' ')[1] * terminal_height > target_size[1]:
+                if pygame.font.Font(font, point + 1).size('M')[1] * terminal_height > target_size[1]:
                     break
                 point += 1
                 
@@ -67,7 +67,7 @@ class PyneEngine:
         self._font = pygame.font.Font(font, point)
         self._point = point
 
-        self._single_char_size = pygame.Vector2(self._font.render(' ', True, self.Color.BACKGROUND).get_size())
+        self._single_char_size = pygame.Vector2(self._font.render('M', True, self.Color.BACKGROUND).get_size())
 
         self._scr_buf = self.Buffer(self._width, self._height)
 
@@ -333,12 +333,14 @@ class PyneEngine:
         
         if os.path.exists('icon.bmp'):
             pygame.display.set_icon(pygame.image.load_basic('icon.bmp'))
-            
+
+        print(self._single_char_size.y / self._single_char_size.x)
+
         while run:
-            delta = clock.tick(30) / 1000
+            delta = clock.tick(0) / 1000
 
             if delta:
-                pygame.display.set_caption(f"{self.TITLE} | Pyne Engine v{VERSION} - {int( 1 / delta )} FPS")
+                pygame.display.set_caption(f"{self.TITLE} | Pyne Engine v{VERSION} - {( 1 / delta ):.2f} FPS")
 
             keys = pygame.key.get_pressed()
 

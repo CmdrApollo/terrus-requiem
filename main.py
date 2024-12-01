@@ -1,5 +1,6 @@
 from pyne.pyne import *
-from planet import Planet
+from player import Player
+from planet import Planet, PlanetXAB112
 from entity import *
 from area_map import *
 from ship_chassis import *
@@ -11,11 +12,14 @@ import tcod.map
 import tcod.constants
 
 GAME_NAME = "Terrus Requiem"
-GAME_VERSION = "v0.0.1"
+GAME_VERSION = "InDev v0.0.1"
 
 # these screens are static, so they are stored as buffers for simplicity.
 main_menu = PyneEngine.Buffer(terminal_width, terminal_height)
 credits_screen = PyneEngine.Buffer(terminal_width, terminal_height)
+help_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
+help_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
+help_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
 
 # If we move onto a tile that is non-descriptive, give the generic terrain description
 overworld_tile_descriptions = {
@@ -36,7 +40,7 @@ overworld_tile_descriptions = {
 
 terrain_symbols = ['"', '+', '&', '~']
 
-DEBUG = True
+DEBUG = False
 
 class GameScene:
     # All of the 'scenes' found in the game
@@ -59,13 +63,15 @@ class GameScene:
 
     BASE_INFO = 10
 
+    HELP = 11
+
 class Actions:
     # actions that require a direction
     CLOSE_DOOR = 0
 
 action_times = [ 75 ]
 
-class Game(PyneEngine):
+class TerrusRequiem(PyneEngine):
     # name of the game and title of the window
     TITLE = GAME_NAME
 
@@ -81,7 +87,7 @@ class Game(PyneEngine):
         # where most things get rendered besides the 5 lines of text
         self.game_window = self.Buffer(self.TerminalWidth(), self.TerminalHeight() - 5)
     
-        self.current_planet = Planet("XA-B1-12", self, seed = 4)
+        self.current_planet = PlanetXAB112(self)
         self.player = Player(self, self.game_window.width // 2, self.game_window.height // 2)
 
         # used for the pseudo-state machine
@@ -112,12 +118,17 @@ class Game(PyneEngine):
         self.waiting_for_direction = False
         self.waiting_action = None
 
+        self.prev_scene = None
+        self.help_screen = 0
+
+        self.LoadOverworld()
+
     # add messages to the queue
     def AddMessage(self, message):
         self.messages.append(message)
 
     def OnConstruct(self):
-        # generate the main menu buffer
+        # === GENERATE MAIN MENU ===
 
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), main_menu)
 
@@ -159,7 +170,7 @@ class Game(PyneEngine):
 
         self.DrawTextLines([GAME_VERSION], (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - 2, self.TerminalHeight() - 2, True, scr = main_menu)
         
-        # generate the credits screen buffer
+        # === GENERATE CREDITS ===
 
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), credits_screen)
 
@@ -196,6 +207,45 @@ class Game(PyneEngine):
         self.DrawText(t := "Michael H.", (self.Color.WHITE, self.Color.BACKGROUND), x - len(t) // 2, y + 1, credits_screen)
         self.DrawText(t := "<The Emotional Support>", (self.Color.GRAY, self.Color.BACKGROUND), x - len(t) // 2, y + 2, credits_screen)
 
+        # === GENERATE HELP 1 ===
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen1)
+        self.DrawText(t := "Help 1", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen1)
+        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen1)
+        self.DrawTextLines([
+            "General ========================================================",
+            "[h] - Help                      [arrows/numpad] - Move          ",
+            "[>] - Enter Area                [<] - Leave Area                ",
+            "[z] - Close Menu                                                ",
+            "                                                                ",
+            "Overworld ======================================================",
+            "[b] - Place Base                                                ",
+            "                                                                ",
+            "Help ===========================================================",
+            "[1/2/3] - Change Screen         [z] - Return to Game            ",
+            "                                                                ",
+            "Planet Base ====================================================",
+            "[b] - Base Info Screen         |[<] - Leave Base                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+            "                               |                                ",
+        ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen1)
+        # === GENERATE HELP 2 ===
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen2)
+        self.DrawText(t := "Help 2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen2)
+        # === GENERATE HELP 3 ===
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen3)
+        self.DrawText(t := "Help 3", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen3)
+
+        self.LoadOverworld()
+        
         return True
     
     def GenerateSolidsMap(self):
@@ -305,14 +355,20 @@ class Game(PyneEngine):
         self.current_map = area
         self.current_scene = GameScene.PLANET_AREA if not is_base else GameScene.PLAYER_BASE
         
-        self.player.x = self.TerminalWidth() // 2
-        self.player.y = self.TerminalHeight() // 2
+        self.player.x = self.current_map.player_start_x
+        self.player.y = self.current_map.player_start_y
 
     def LoadOverworld(self):
-        self.player.x = self.current_map.x
-        self.player.y = self.current_map.y
-
         self.current_scene = GameScene.PLANET_OVERWORLD
+
+        if self.current_map:
+            self.player.x = self.current_map.x
+            self.player.y = self.current_map.y
+        else:
+            self.player.x = self.current_planet.player_start_x
+            self.player.y = self.current_planet.player_start_y
+
+        self.current_map = None
 
     def HandleDirection(self):
         # sets the direction x and y variables based on what key we pressed
@@ -333,6 +389,11 @@ class Game(PyneEngine):
             return not self.waiting_for_direction
 
         return False
+
+    def HandleHelpScreen(self):
+        if self.KeyPressed(K_h):
+            self.prev_scene = self.current_scene
+            self.current_scene = GameScene.HELP
 
     def OnUpdate(self, delta):
         # called every frame
@@ -364,7 +425,7 @@ class Game(PyneEngine):
         # obeys modifiers
         cache = self.TextCache() if self.HasTextCache() else None
         
-        if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.BASE_INFO]:
+        if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.BASE_INFO, GameScene.HELP]:
             if self.KeyPressed(pygame.K_z):
                 self.dialogue_manager.on_confirm()
         
@@ -382,6 +443,17 @@ class Game(PyneEngine):
             if cache == 'z':
                 # move back to main menu
                 self.current_scene = GameScene.MAIN_MENU
+        elif self.current_scene == GameScene.HELP:
+            if cache == 'z':
+                # move back to game
+                self.current_scene = self.prev_scene
+                return True
+            elif cache == '1':
+                self.help_screen = 0
+            elif cache == '2':
+                self.help_screen = 1
+            elif cache == '3':
+                self.help_screen = 2
 
         if self.dialogue_manager.has_dialogue():
             return True
@@ -390,6 +462,7 @@ class Game(PyneEngine):
         match self.current_scene:
             case GameScene.PLANET_OVERWORLD:
                 # we can move and interact in the overworld
+                self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
 
                 if cache == 'b':
@@ -427,6 +500,8 @@ class Game(PyneEngine):
             case GameScene.PLANET_AREA:
                 # if we aren't holding up the game for a direction to be pressed
                 # get what entity we move into (for interaction)
+                self.HandleHelpScreen()
+
                 if not self.waiting_for_direction:
                     move_interact_entity = self.HandleMoveAndInteract()
                 else:
@@ -487,6 +562,7 @@ class Game(PyneEngine):
             
             case GameScene.PLAYER_BASE:
                 # we can move and interact in the base
+                self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
 
                 if cache == '<':
@@ -498,21 +574,24 @@ class Game(PyneEngine):
                     self.current_scene = GameScene.BASE_INFO
 
             case GameScene.DUNGEON:
+                self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
             
             case GameScene.CAVE:
+                self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
             
             case GameScene.OUTER_SPACE:
-                pass
+                self.HandleHelpScreen()
             
             case GameScene.INVENTORY:
-                pass
+                self.HandleHelpScreen()
             
             case GameScene.PLAYER_STATS:
-                pass
+                self.HandleHelpScreen()
 
             case GameScene.BASE_INFO:
+                self.HandleHelpScreen()
                 if self.renaming_base:
                     self.HandleTextInput()
                     
@@ -646,9 +725,14 @@ class Game(PyneEngine):
                     self.DrawText(self.user_text_input + '_', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window.width // 2 - 19, self.game_window.height // 2 - 1, scr = self.game_window)
 
                 self.DrawText(t := "n - Rename Base     z - Exit", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - (len(t) + 1), self.TerminalHeight() - 1)
+            
+            case GameScene.HELP:
+                self.BlitBuffer([help_screen1, help_screen2, help_screen3][self.help_screen], 0, 0)
+                
+                return True
 
         show_dialogue = False
-        if self.current_scene != GameScene.BASE_INFO:
+        if self.current_scene not in [GameScene.BASE_INFO, GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS]:
             show_dialogue = True
 
             # draw the '@' for the player
@@ -698,9 +782,11 @@ class Game(PyneEngine):
                 self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
             elif self.current_scene == GameScene.PLANET_OVERWORLD:
                 # Otherwise, attempt to show the generic description of the tile we are on
-                if self.current_overlapping_element.symbol in overworld_tile_descriptions:
-                    self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
-
+                try:
+                    if self.current_overlapping_element.symbol in overworld_tile_descriptions:
+                        self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
+                except AttributeError:
+                    pass
 
         # put the game window onto the main screen
         self.BlitBuffer(self.game_window, 0, 2)
@@ -718,5 +804,5 @@ class Game(PyneEngine):
         return True
 
 # create the game object and start the game :)
-game = Game(terminal_width, terminal_height)
+game = TerrusRequiem(terminal_width, terminal_height)
 game.start()

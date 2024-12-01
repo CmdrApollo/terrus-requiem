@@ -334,8 +334,6 @@ class PyneEngine:
         if os.path.exists('icon.bmp'):
             pygame.display.set_icon(pygame.image.load_basic('icon.bmp'))
 
-        print(self._single_char_size.y / self._single_char_size.x)
-
         while run:
             delta = clock.tick(30) / 1000
 

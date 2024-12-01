@@ -9,6 +9,8 @@ class Player:
 
         self.credits = 1000
 
+        self.homeworld = None
+
         self.endurance = 5
         self.dexterity = 5
         self.intelligence = 5

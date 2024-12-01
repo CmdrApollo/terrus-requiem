@@ -6,6 +6,7 @@ from area_map import *
 from ship_chassis import *
 from utils import *
 from dialogue import DialogueManager
+from homeworld import *
 
 import numpy as np
 import tcod.map
@@ -339,6 +340,36 @@ class TerrusRequiem(PyneEngine):
             "                                                                          ",
             "                                                                          ",
         ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen1)
+
+        # === GENERATE CREATION 2 ===
+        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen2)
+        self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen2)
+        self.DrawTextLines([
+            "Character Creation                                          Choose a Class",
+            "                                                                          ",
+            "[aA] - Noble                                                              ",
+            "[mM] - Scoundrel                                                          ",
+            "[tT] - Merchant                                                           ",
+            "[zZ] - Mechanic                                                           ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+            "                                                                          ",
+        ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen2)
 
         self.LoadOverworld()
 
@@ -707,46 +738,65 @@ class TerrusRequiem(PyneEngine):
                         self.renaming_base = True
 
             case GameScene.CHARACTER_CREATION:
-                if cache == 'A':
-                    self.dialogue_manager.queue_text([
-                        "Ajaet (CT-98-4)",
-                        "The <#ffff80>Aji</> are the only known sentient race in the universe",
-                        "other than Terrestrians. What they lack in physical ability,",
-                        "they more than make up for in raw intellect.",
-                        "(+1 INTELLIGENCE / -1 ENDURANCE)"
-                    ])
-                elif cache == 'M':
-                    self.dialogue_manager.queue_text([
-                        "Mokra (B2-7Z-1)",
-                        "<#ffff80>Mokrians</> are know for their deep knowledge of",
-                        "flora and fauna, their ability to adapt to wild environments,",
-                        "and their seeming \"6th sense\" or ability to seem to always",
-                        "know when something is fishy.",
-                        "(TRAPFINDER trait / +1 PERCEPTION)"
-                    ])
-                elif cache == 'T':
-                    self.dialogue_manager.queue_text([
-                        "Terrus (N6-JB-3)",
-                        "<#ffff80>Terrestrians</> are known for being highly adaptive",
-                        "to nearly any environment.",
-                        "(STURDY trait)"
-                    ])
-                elif cache == 'Z':
-                    self.dialogue_manager.queue_text([
-                        "Zandar (MD-48-6)",
-                        "<#ffff80>Zandari</> are known for their increased mobility in water",
-                        "and their high lung capacity.",
-                        "(CONTROLLED BREATHING trait / +5 SWIMMING skill)"
-                    ])
-                elif cache == 'S':
-                    self.dialogue_manager.queue_text([
-                        "Space",
-                        "Hailing from the depths of space, the <#ffff80>Space-Born</> are used to low",
-                        "gravity and are universally handy with computers and spaceship",
-                        "mechanics.",
-                        "(CHILD OF SPACE trait / +5 ELECTRONICS skill)"
-                    ])
-
+                match self.creation_screen:
+                    case 0:
+                        if cache == 'a':
+                            self.player.homeworld = Ajaet()
+                            self.creation_screen += 1
+                        elif cache == 'A':
+                            self.dialogue_manager.queue_text([
+                                "Ajaet (CT-98-4)",
+                                "The <#ffff80>Aji</> are the only known sentient race in the universe",
+                                "other than Terrestrians. What they lack in physical ability,",
+                                "they more than make up for in raw intellect.",
+                                "(+1 INTELLIGENCE / -1 ENDURANCE)"
+                            ])
+                        elif cache == 'M':
+                            self.dialogue_manager.queue_text([
+                                "Mokra (B2-7Z-1)",
+                                "<#ffff80>Mokrians</> are know for their deep knowledge of",
+                                "flora and fauna, their ability to adapt to wild environments,",
+                                "and their seeming \"6th sense\" or ability to seem to always",
+                                "know when something is fishy.",
+                                "(TRAPFINDER trait / +1 PERCEPTION)"
+                            ])
+                        elif cache == 'm':
+                            self.player.homeworld = Mokra()
+                            self.creation_screen += 1
+                        elif cache == 'T':
+                            self.dialogue_manager.queue_text([
+                                "Terrus (N6-JB-3)",
+                                "<#ffff80>Terrestrians</> are known for being highly adaptive",
+                                "to nearly any environment.",
+                                "(STURDY trait)"
+                            ])
+                        elif cache == 't':
+                            self.player.homeworld = Terrus()
+                            self.creation_screen += 1
+                        elif cache == 'Z':
+                            self.dialogue_manager.queue_text([
+                                "Zandar (MD-48-6)",
+                                "<#ffff80>Zandari</> are known for their increased mobility in water",
+                                "and their high lung capacity.",
+                                "(CONTROLLED BREATHING trait / +5 SWIMMING skill)"
+                            ])
+                        elif cache == 'z':
+                            self.player.homeworld = Zandar()
+                            self.creation_screen += 1
+                        elif cache == 'S':
+                            self.dialogue_manager.queue_text([
+                                "Space",
+                                "Hailing from the depths of space, the <#ffff80>Space-Born</> are used to low",
+                                "gravity and are universally handy with computers and spaceship",
+                                "mechanics.",
+                                "(CHILD OF SPACE trait / +5 ELECTRONICS skill)"
+                            ])
+                        elif cache == 's':
+                            self.player.homeworld = Space()
+                            self.creation_screen += 1
+                    case 1:
+                        pass
+                    
         return True
     
     def DrawEntities(self):

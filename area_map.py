@@ -41,7 +41,6 @@ class Settlement(Map):
         rects = []
 
         for r in rects:
-            print(r)
             self.engine.FillRect('.', (self.engine.Color.GRAY, self.engine.Color.BACKGROUND), r[0], r[1], r[2], r[3], scr = self.data)
 
         wallify(self.data, self.engine)

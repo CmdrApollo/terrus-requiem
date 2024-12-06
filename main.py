@@ -133,6 +133,11 @@ class TerrusRequiem(PyneEngine):
     def AddMessage(self, message):
         self.messages.append(message)
 
+    def RenderBook(self, title, text, scr=None):
+        self.DrawText(t := title, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, scr)
+        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=scr)
+        self.DrawTextLines(text, (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=scr)
+
     def OnConstruct(self):
         self.LoadAudio("main_theme", ["assets", "audio", "main_theme.wav"])
 
@@ -223,13 +228,11 @@ class TerrusRequiem(PyneEngine):
 
         # === GENERATE HELP 1 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen1)
-        self.DrawText(t := "Help 1/2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen1)
-        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen1)
-        self.DrawTextLines([
+        self.RenderBook("Help 1/2", [
             "General =======================|================================",
             "[h] - Help                     |[arrows/numpad] - Move          ",
             "[>] - Enter Area               |[<] - Leave Area                ",
-            "[z] - Close Menu               |                                ",
+            "[space] - Advance Dialogue     |[z] - Close Menu                ",
             "                               |                                ",
             "Overworld =====================|================================",
             "[b] - Place Base               |                                ",
@@ -250,12 +253,10 @@ class TerrusRequiem(PyneEngine):
             "                               |                                ",
             "                               |                                ",
             "                               |                                ",
-        ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen1)
+        ], help_screen1)
         # === GENERATE HELP 2 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen2)
-        self.DrawText(t := "Help 2/2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen2)
-        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen2)
-        self.DrawTextLines([
+        self.RenderBook("Help 2/2", [
             "                               |                                ",
             "                               |                                ",
             "                               |                                ",
@@ -280,12 +281,10 @@ class TerrusRequiem(PyneEngine):
             "                               |                                ",
             "                               |                                ",
             "                               |                                ",
-        ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen2)
+        ], help_screen2)
         # === GENERATE HELP 3 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), help_screen3)
-        self.DrawText(t := "Help 3/2", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, help_screen3)
-        self.DrawRect((self.Color.YELLOW, self.Color.BACKGROUND), 5, 2, 65, 25, scr=help_screen3)
-        self.DrawTextLines([
+        self.RenderBook("Help 3/2", [
             "Hey! Thank you so so much for  |                                ",
             "playing my game, it really     |                                ",
             "means so much to me! This game |                                ",
@@ -310,7 +309,7 @@ class TerrusRequiem(PyneEngine):
             "                               |                                ",
             "                         -Elly |                                ",
             "                               |                                ",
-        ], (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=help_screen3)
+        ], help_screen3)
 
         # === GENERATE CREATION 1 ===
         self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen1)
@@ -323,23 +322,6 @@ class TerrusRequiem(PyneEngine):
             "[tT] - Terrus                                                             ",
             "[zZ] - Zandar                                                             ",
             "[sS] - Space-Born                                                         ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
         ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen1)
 
         # === GENERATE CREATION 2 ===
@@ -354,22 +336,6 @@ class TerrusRequiem(PyneEngine):
             "[sS] - Scoundrel                                                          ",
             "[mM] - Merchant                                                           ",
             "[cC] - Mechanic                                                           ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
         ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen2)
 
         # === GENERATE CREATION 2 ===
@@ -377,29 +343,6 @@ class TerrusRequiem(PyneEngine):
         self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen3)
         self.DrawTextLines([
             "Character Creation                                         Enter Your Name",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
         ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen3)
 
         self.LoadOverworld()
@@ -586,7 +529,7 @@ class TerrusRequiem(PyneEngine):
         cache = self.TextCache() if self.HasTextCache() else None
         
         if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.BASE_INFO, GameScene.HELP]:
-            if self.KeyPressed(pygame.K_z):
+            if self.KeyPressed(pygame.K_SPACE):
                 self.dialogue_manager.on_confirm()
         
         if self.current_scene == GameScene.MAIN_MENU:

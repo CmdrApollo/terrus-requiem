@@ -66,8 +66,8 @@ while run:
     render_text(screen, "#.C..................#", 0, -9 + 108, '#80ff80')
     render_text(screen, "#...#................#", 0, -9 + 117, '#80ff80')
     render_text(screen, "######################", 0, -9 + 126, '#80ff80')
-    render_text(screen, "COMMANDER, DO YOU COPY?", 0, -9 + 144, '#ff8080')
-    render_text(screen, "BLAH BLAH BLAH!!!", 0, -9 + 153, '#8080ff')
+    render_text(screen, "commander, do you copy?", 0, -9 + 144, '#ff8080')
+    render_text(screen, "blah blah blah!!!", 0, -9 + 153, '#8080ff')
 
     WIN.blit(pygame.transform.scale(screen, (WIDTH * 4, HEIGHT * 4)), (0, 0))
 

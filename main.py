@@ -1,13 +1,11 @@
 from pyne.pyne import *
 from player import Player
-from planet import Planet, PlanetXAB112
 from entity import *
 from area_map import *
 from ship_chassis import *
 from utils import *
 from dialogue import DialogueManager
 from homeworld import *
-from character_class import *
 
 import numpy as np
 import tcod.map
@@ -22,26 +20,6 @@ credits_screen = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
-creation_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
-creation_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
-creation_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
-
-# If we move onto a tile that is non-descriptive, give the generic terrain description
-overworld_tile_descriptions = {
-    '&': 'A Forest.',
-    '"': 'Plains.',
-    '=': 'A Body of Water.',
-    '^': 'Mountains.',
-    '.': 'A Road.',
-    '~': 'Hills.',
-    '+': 'Beaches.',
-
-    'b': 'Your Base.',
-
-    'x': 'A Shipwreck.',
-    '*': 'A Cave Entrance.',
-    'o': 'A Settlement.'
-}
 
 terrain_symbols = ['"', '+', '&', '~']
 
@@ -53,24 +31,13 @@ class GameScene:
     MAIN_MENU = 0
     CREDITS = 1
 
-    PLANET_OVERWORLD = 2
-    PLANET_AREA = 3
-    
-    PLAYER_BASE = 4
+    MAIN_SHIP = 2
+    CAVE = 3
 
-    DUNGEON = 5
-    CAVE = 6
+    INVENTORY = 4
+    PLAYER_STATS = 5
 
-    OUTER_SPACE = 7
-
-    INVENTORY = 8
-    PLAYER_STATS = 9
-
-    BASE_INFO = 10
-
-    HELP = 11
-
-    CHARACTER_CREATION = 12
+    HELP = 6
 
 class Actions:
     # actions that require a direction
@@ -85,23 +52,18 @@ class TerrusRequiem(PyneEngine):
     def __init__(self, terminal_width=terminal_width, terminal_height=terminal_height, target_size=(1600, 900)):
         super().__init__(terminal_width, terminal_height, target_size)
 
-        # generate the ship chassis buffers
-        self.ship_chassis = {
-            'Z800': generate_chassis_Z800(self),
-            'X40': generate_chassis_X40(self)
-        }
-
         # where most things get rendered besides the 5 lines of text
         self.game_window = self.Buffer(self.TerminalWidth(), self.TerminalHeight() - 5)
     
-        self.current_planet = PlanetXAB112(self)
         self.player = Player(self, self.game_window.width // 2, self.game_window.height // 2)
 
         # used for the pseudo-state machine
         self.current_scene = GameScene.MAIN_MENU
 
+        self.main_map = MainMap(self)
+
         # used for collisions and things
-        self.current_map = None
+        self.current_map = self.main_map
         self.current_overlapping_element = None
 
         # dialogue manager
@@ -128,6 +90,8 @@ class TerrusRequiem(PyneEngine):
         self.prev_scene = None
         self.help_screen = 0
         self.creation_screen = 0
+
+        self.GenerateSolidsMap()
 
     # add messages to the queue
     def AddMessage(self, message):
@@ -311,41 +275,7 @@ class TerrusRequiem(PyneEngine):
             "                               |                                ",
         ], help_screen3)
 
-        # === GENERATE CREATION 1 ===
-        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen1)
-        self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen1)
-        self.DrawTextLines([
-            "Character Creation                                      Choose a Homeworld",
-            "                                                                          ",
-            "[aA] - Ajaet                                                              ",
-            "[mM] - Mokra                                                              ",
-            "[tT] - Terrus                                                             ",
-            "[zZ] - Zandar                                                             ",
-            "[sS] - Space-Born                                                         ",
-        ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen1)
-
-        # === GENERATE CREATION 2 ===
-        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen2)
-        self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen2)
-        self.DrawTextLines([
-            "Character Creation                                          Choose a Class",
-            "                                                                          ",
-            "                                                                          ",
-            "                                                                          ",
-            "[nN] - Noble                                                              ",
-            "[sS] - Scoundrel                                                          ",
-            "[mM] - Merchant                                                           ",
-            "[cC] - Mechanic                                                           ",
-        ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen2)
-
-        # === GENERATE CREATION 2 ===
-        self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), creation_screen3)
-        self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1, scr=creation_screen3)
-        self.DrawTextLines([
-            "Character Creation                                         Enter Your Name",
-        ], (self.Color.WHITE, self.Color.BACKGROUND), 1, 1, scr=creation_screen3)
-
-        self.LoadOverworld()
+        self.LoadWorld()
 
         self.current_scene = GameScene.MAIN_MENU
         
@@ -461,17 +391,12 @@ class TerrusRequiem(PyneEngine):
         self.player.x = self.current_map.player_start_x
         self.player.y = self.current_map.player_start_y
 
-    def LoadOverworld(self):
-        self.current_scene = GameScene.PLANET_OVERWORLD
+    def LoadWorld(self):
+        self.current_scene = GameScene.MAIN_SHIP
+        self.current_map = self.main_map
 
-        if self.current_map:
-            self.player.x = self.current_map.x
-            self.player.y = self.current_map.y
-        else:
-            self.player.x = self.current_planet.player_start_x
-            self.player.y = self.current_planet.player_start_y
-
-        self.current_map = None
+        self.player.x = self.current_map.x
+        self.player.y = self.current_map.y
 
     def HandleDirection(self):
         # sets the direction x and y variables based on what key we pressed
@@ -507,11 +432,8 @@ class TerrusRequiem(PyneEngine):
             self.first_frame = False
             return True
 
-        # gets the 'ScrElement' object from the planet overworld
-        self.current_overlapping_element = self.current_planet.overworld.GetAt(self.player.x, self.player.y)
-
         # TODO: update as more game scenes get implemented.
-        if self.current_scene in [GameScene.PLANET_AREA, GameScene.PLANET_OVERWORLD]:
+        if self.current_scene  == GameScene.MAIN_SHIP:
             if len(self.messages):
                 # If we pressed any key (basically), remove the first message in the queue
 
@@ -528,14 +450,13 @@ class TerrusRequiem(PyneEngine):
         # obeys modifiers
         cache = self.TextCache() if self.HasTextCache() else None
         
-        if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.BASE_INFO, GameScene.HELP]:
+        if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.HELP]:
             if self.KeyPressed(pygame.K_SPACE):
                 self.dialogue_manager.on_confirm()
         
         if self.current_scene == GameScene.MAIN_MENU:
             if cache == 'p':
-                # TODO : switch this to character creation
-                self.current_scene = GameScene.CHARACTER_CREATION
+                self.current_scene = GameScene.MAIN_SHIP
             elif cache == 'c':
                 # move to credits scene
                 self.current_scene = GameScene.CREDITS
@@ -563,31 +484,12 @@ class TerrusRequiem(PyneEngine):
 
         # the dreaded switch case
         match self.current_scene:
-            case GameScene.PLANET_OVERWORLD:
+            case GameScene.MAIN_SHIP:
                 # we can move and interact in the overworld
                 self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
 
-                if cache == 'b':
-                    # attempt place player base
-                    if self.current_overlapping_element.symbol in terrain_symbols:
-                        if not self.current_planet.contains_base:
-                            # If the player presses 'b' and the current planet does not currently have a base, create one.
-                            self.DrawChar(
-                                'b',
-                                (self.current_overlapping_element.fg, self.Color.BACKGROUND),
-                                self.player.x, self.player.y,
-                                self.current_planet.overworld
-                            )
-
-                            self.current_planet.contains_base = True
-
-                            self.current_planet.areas.append(Base(f"{self.current_planet.name} Base", self.current_planet, self, self.player.x, self.player.y))
-                        else:
-                            self.AddMessage("You already have a base on this planet!")
-                    else:
-                        self.AddMessage("You can't place your base here!")
-                elif cache == '>':
+                if cache == '>':
                     # player is attempting to enter an area
                     
                     for area in self.current_planet.areas:
@@ -599,203 +501,16 @@ class TerrusRequiem(PyneEngine):
                             self.GenerateSolidsMap()
 
                             break
-
-            case GameScene.PLANET_AREA:
-                # if we aren't holding up the game for a direction to be pressed
-                # get what entity we move into (for interaction)
-                self.HandleHelpScreen()
-
-                if not self.waiting_for_direction:
-                    move_interact_entity = self.HandleMoveAndInteract()
-                else:
-                    move_interact_entity = None
-
-                has_direction = self.HandleDirection()
-
-                if has_direction:
-                    match self.waiting_action:
-                        case Actions.CLOSE_DOOR:
-                            # check every entity to see if it is a door/hatch
-                            for e in self.current_map.entities:
-                                if e.x == self.player.x + self.direction_x and e.y == self.player.y + self.direction_y:
-                                    if type(e) in [Door, Hatch]:
-                                        if e.solid:
-                                            self.AddMessage(f"{'Door' if type(e) == Door else 'Hatch'} is already closed.")
-                                        else:
-                                            self.AddMessage(f"You close the {'door' if type(e) == Door else 'hatch'}.")
-
-                                            e.Close()
-
-                                            self.advance_time = True
-
-                                            self.action_time = action_times[Actions.CLOSE_DOOR]
-
-                                            self.GenerateSolidsMap()
-                                    else:
-                                        self.AddMessage("You can't close that!")
-
-                    # reset
-                    self.waiting_action = None
-                    self.waiting_for_direction = False
-
-                if cache == 'c':
-                    # player is attempting to close a door
-                    self.waiting_for_direction = True
-                    self.waiting_action = Actions.CLOSE_DOOR
-                    self.AddMessage("Close door in what direction?")
-
-                if move_interact_entity:
-                    # if we move into an entity, interact with it and advance time
-                    self.advance_time = True
-
-                    move_interact_entity.PlayerMoveInteract(self, self.player)
-                    self.action_time = move_interact_entity.move_interact_time
-                    
-                    # remove the entity if it has marked itself for removal
-                    # (usually upon death)
-                    if move_interact_entity.to_remove:
-                        self.current_map.entities.remove(move_interact_entity)
-
-                    if type(move_interact_entity) in [Door, Hatch]:
-                        # If we open a door, regenerate the solids map
-                        self.GenerateSolidsMap()
-                
-                if self.advance_time:
-                    self.AdvanceTime()
-            
-            case GameScene.PLAYER_BASE:
-                # we can move and interact in the base
-                self.HandleHelpScreen()
-                self.HandleMoveAndInteract()
-
-                if cache == '<':
-                    # player leaves base
-                    self.AddMessage("You leave your base.")
-                    self.LoadOverworld()
-                elif cache == 'b':
-                    # move to base info scene
-                    self.current_scene = GameScene.BASE_INFO
-
-            case GameScene.DUNGEON:
-                self.HandleHelpScreen()
-                self.HandleMoveAndInteract()
-            
+           
             case GameScene.CAVE:
                 self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
-            
-            case GameScene.OUTER_SPACE:
-                self.HandleHelpScreen()
             
             case GameScene.INVENTORY:
                 self.HandleHelpScreen()
             
             case GameScene.PLAYER_STATS:
                 self.HandleHelpScreen()
-
-            case GameScene.BASE_INFO:
-                self.HandleHelpScreen()
-                if self.renaming_base:
-                    self.HandleTextInput()
-                    
-                    if self.KeyPressed(K_RETURN):
-
-                        self.renaming_base = False
-                        self.current_map.name = self.user_text_input
-
-                        self.user_text_input = ''
-                else:
-                    if cache == 'z':
-                        # exit menu
-                        self.current_scene = GameScene.PLAYER_BASE
-                    elif cache == 'n':
-                        self.renaming_base = True
-
-            case GameScene.CHARACTER_CREATION:
-                match self.creation_screen:
-                    case 0:
-                        if cache == 'a':
-                            self.player.homeworld = Ajaet()
-                            self.creation_screen += 1
-                        elif cache == 'A':
-                            self.dialogue_manager.queue_text([
-                                "Ajaet (CT-98-4)",
-                                "The <#ffff80>Aji</> are the only known sentient race in the universe",
-                                "other than Terrestrians. What they lack in physical ability,",
-                                "they more than make up for in raw intellect.",
-                                "(+1 INTELLIGENCE / -1 ENDURANCE)"
-                            ])
-                        elif cache == 'M':
-                            self.dialogue_manager.queue_text([
-                                "Mokra (B2-7Z-1)",
-                                "<#ffff80>Mokrians</> are know for their deep knowledge of",
-                                "flora and fauna, their ability to adapt to wild environments,",
-                                "and their seeming \"6th sense\" or ability to seem to always",
-                                "know when something is fishy.",
-                                "(TRAPFINDER trait / +1 PERCEPTION)"
-                            ])
-                        elif cache == 'm':
-                            self.player.homeworld = Mokra()
-                            self.creation_screen += 1
-                        elif cache == 'T':
-                            self.dialogue_manager.queue_text([
-                                "Terrus (N6-JB-3)",
-                                "<#ffff80>Terrestrians</> are known for being highly adaptive",
-                                "to nearly any environment.",
-                                "(STURDY trait)"
-                            ])
-                        elif cache == 't':
-                            self.player.homeworld = Terrus()
-                            self.creation_screen += 1
-                        elif cache == 'Z':
-                            self.dialogue_manager.queue_text([
-                                "Zandar (MD-48-6)",
-                                "<#ffff80>Zandari</> are known for their increased mobility in water",
-                                "and their high lung capacity.",
-                                "(CONTROLLED BREATHING trait / +5 SWIMMING skill)"
-                            ])
-                        elif cache == 'z':
-                            self.player.homeworld = Zandar()
-                            self.creation_screen += 1
-                        elif cache == 'S':
-                            self.dialogue_manager.queue_text([
-                                "Space",
-                                "Hailing from the depths of space, the <#ffff80>Space-Born</> are used to low",
-                                "gravity and are universally handy with computers and spaceship",
-                                "mechanics.",
-                                "(CHILD OF SPACE trait / +5 ELECTRONICS skill)"
-                            ])
-                        elif cache == 's':
-                            self.player.homeworld = Space()
-                            self.creation_screen += 1
-                    case 1:
-                        if cache == 'n':
-                            self.player.character_class = Noble()
-                            self.creation_screen += 1
-                        elif cache == 'N':
-                            pass
-                        elif cache == 's':
-                            self.player.character_class = Scoundrel()
-                            self.creation_screen += 1
-                        elif cache == 'S':
-                            pass
-                        elif cache == 'm':
-                            self.player.character_class = Merchant()
-                            self.creation_screen += 1
-                        elif cache == 'M':
-                            pass
-                        elif cache == 'c':
-                            self.player.character_class = Mechanic()
-                            self.creation_screen += 1
-                        elif cache == 'C':
-                            pass
-                    case 2:
-                        self.HandleTextInput()
-                        
-                        if self.KeyPressed(K_RETURN):
-                            self.player.name = self.user_text_input
-                            self.creation_screen = 0
-                            self.current_scene = GameScene.PLANET_OVERWORLD
 
         return True
     
@@ -835,33 +550,15 @@ class TerrusRequiem(PyneEngine):
                 
                 return True
 
-            case GameScene.PLANET_OVERWORLD:
+            case GameScene.MAIN_SHIP:
                 # blit the planet overworld buffer to the game window
                 # and put the planet name on the bottom of the screen
-                self.BlitBuffer(self.current_planet.overworld, 0, 0, self.game_window)
-                self.DrawText(f"{self.current_planet.name} Overworld", (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
-
-            case GameScene.PLANET_AREA:
-                # blit the map buffer to the game window
-                # and put the area name on the bottom of the screen
                 self.BlitBuffer(self.current_map.data, 0, 0, self.game_window)
-                self.DrawText(self.current_map.name, (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
-            
+                self.DrawText(f"{self.current_map.name}", (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
+
                 self.DrawEntities()
-
-            case GameScene.PLAYER_BASE:
-                # blit the base buffer to the game window
-                # and put the base name on the bottom of the screen
-                self.BlitBuffer(self.current_map.data, 0, 0, self.game_window)
-                self.DrawText(self.current_map.name, (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
-
-            case GameScene.DUNGEON:
-                pass
             
             case GameScene.CAVE:
-                pass
-            
-            case GameScene.OUTER_SPACE:
                 pass
             
             case GameScene.INVENTORY:
@@ -870,80 +567,12 @@ class TerrusRequiem(PyneEngine):
             case GameScene.PLAYER_STATS:
                 pass
 
-            case GameScene.BASE_INFO:
-                self.Clear(' ', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window)
-                # draw the title
-                self.DrawTextLines(
-                    [
-                        "Base Info",
-                        "-"*self.game_window.width,
-                    ],
-                    (self.Color.YELLOW, self.Color.BACKGROUND), 0, 0,
-                    scr = self.game_window
-                )
-                # draw the left side
-                self.DrawTextLines(
-                    [
-                        f'Name   -',
-                        f'Planet -',
-                        '',
-                        f'Level  -',
-                        f'EXP    -',
-                    ],
-                    (self.Color.WHITE, self.Color.BACKGROUND), 0, 3,
-                    scr = self.game_window
-                )
-                # draw the right side
-                self.DrawTextLines(
-                    [
-                        f'{self.current_map.name}',
-                        f'{self.current_planet.name}',
-                        '',
-                        f'{self.current_map.level}',
-                        f'{self.current_map.exp}/{self.current_map.exp_to_level_up}'
-                    ],
-                    (self.Color.YELLOW, self.Color.BACKGROUND), 10, 3,
-                    scr = self.game_window
-                )
-
-                # draw a lil window if renaming the base
-                if self.renaming_base:
-                    self.FillRect(' ', (0, 0), self.game_window.width // 2 - 20, self.game_window.height // 2 - 4, 40, 8, scr = self.game_window)
-                    self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.game_window.width // 2 - 20, self.game_window.height // 2 - 4, 40, 8, scr = self.game_window)
-
-                    self.DrawTextLines(["Rename your base to what?", '-' * 39], (self.Color.YELLOW, self.Color.BACKGROUND), self.game_window.width // 2 - 19, self.game_window.height // 2 - 3, scr=self.game_window)
-
-                    self.DrawText(self.user_text_input + '_', (self.Color.WHITE, self.Color.BACKGROUND), self.game_window.width // 2 - 19, self.game_window.height // 2 - 1, scr = self.game_window)
-
-                self.DrawText(t := "n - Rename Base     z - Exit", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - (len(t) + 1), self.TerminalHeight() - 1)
-            
             case GameScene.HELP:
                 self.BlitBuffer([help_screen1, help_screen2, help_screen3][self.help_screen], 0, 0)
                 
                 return True
             
-            case GameScene.CHARACTER_CREATION:
-                self.BlitBuffer([creation_screen1, creation_screen2, creation_screen3][self.creation_screen], 0, 0)
-
-                for x in range(self.TerminalWidth() - 2):
-                    for y in range(self.TerminalHeight() - 2):
-                        if self.CharAt(x + 1, y + 1).symbol == " ":
-                            self.DrawChar('.', (random.choice([self.Color.DARK_GREEN, self.Color.VERY_DARK_GREEN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
-                
-                match self.creation_screen:
-                    case 0:
-                        pass
-                    case 1:
-                        self.DrawText(f"Homeworld - {self.player.homeworld.name}", (self.Color.WHITE, self.Color.BACKGROUND), 1, 3)
-                    case 2:
-                        self.DrawText(f"Homeworld - {self.player.homeworld.name}", (self.Color.WHITE, self.Color.BACKGROUND), 1, 3)
-                        self.DrawText(f"Class - {self.player.character_class.name}", (self.Color.WHITE, self.Color.BACKGROUND), 1, 4)
-                        self.DrawText(self.user_text_input + "_", (self.Color.WHITE, self.Color.BACKGROUND), 1, 6)
-
-
-                show_dialogue = True
-            
-        if self.current_scene not in [GameScene.BASE_INFO, GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS, GameScene.CHARACTER_CREATION]:
+        if self.current_scene not in [GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS]:
             show_dialogue = True
 
             # draw the '@' for the player
@@ -991,17 +620,9 @@ class TerrusRequiem(PyneEngine):
 
                 # draw the text
                 self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
-            elif self.current_scene == GameScene.PLANET_OVERWORLD:
-                # Otherwise, attempt to show the generic description of the tile we are on
-                try:
-                    if self.current_overlapping_element.symbol in overworld_tile_descriptions:
-                        self.DrawText(overworld_tile_descriptions[self.current_overlapping_element.symbol], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
-                except AttributeError:
-                    pass
 
-        if self.current_scene != GameScene.CHARACTER_CREATION:
-            # put the game window onto the main screen
-            self.BlitBuffer(self.game_window, 0, 2)
+        # put the game window onto the main screen
+        self.BlitBuffer(self.game_window, 0, 2)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)

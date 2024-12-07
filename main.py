@@ -12,7 +12,7 @@ import tcod.map
 import tcod.constants
 
 GAME_NAME = "Terrus Requiem"
-GAME_VERSION = "InDev v0.0.1"
+GAME_VERSION = "InDev v0.0.2"
 
 # these screens are static, so they are stored as buffers for simplicity.
 main_menu = PyneEngine.Buffer(terminal_width, terminal_height)
@@ -20,8 +20,6 @@ credits_screen = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
-
-terrain_symbols = ['"', '+', '&', '~']
 
 DEBUG = False
 
@@ -60,7 +58,7 @@ class TerrusRequiem(PyneEngine):
         # used for the pseudo-state machine
         self.current_scene = GameScene.MAIN_MENU
 
-        self.main_map = MainMap(self)
+        self.main_map = ShipArea("Medbay", self)
 
         # used for collisions and things
         self.current_map = self.main_map
@@ -130,19 +128,18 @@ class TerrusRequiem(PyneEngine):
             r"  |___| |__   |   | |   |   |   |__   | | |  ",
             r"  |  \  |     |  \| |   |   |   |     |   |  ",
             r"  |   | |___|  \_/\  \_/| |_|_| |___| |   |  ",
+            r"                                             ",
+            r"                   Part I                    ",
         ], (self.Color.WHITE, self.Color.BACKGROUND), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2, scr = main_menu)
 
         for i in [0, 1, 2, 3, 41, 42, 43, 44]:
             for j in range(5):
                 self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j, main_menu)
             
-        # for i in range(45):
-        #     self.SetColor((self.Color.DARK_MAGENTA if not (i % 4) else self.Color.DARK_RED, self.Color.BACKGROUND), x + i, y + 6, scr = main_menu)
-
         self.DrawTextLines(lines := [
-            "p - Play             ",
-            "l - Load Game        ",
-            "x - Delete Saved Game",
+            "p - Play (new game)  ",
+            "l - Load game        ",
+            "x - Delete saved game",
             "c - Credits          ",
             "q - Quit             ",
         ], (self.Color.YELLOW, self.Color.BACKGROUND), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = main_menu)
@@ -361,7 +358,7 @@ class TerrusRequiem(PyneEngine):
                     
                     if self.current_map:
                         for e in self.current_map.entities:
-                            if e.x == attempt_move_x and e.y == attempt_move_y:
+                            if e.solid and e.x == attempt_move_x and e.y == attempt_move_y:
                                 return e
 
             if allow_move:
@@ -395,8 +392,8 @@ class TerrusRequiem(PyneEngine):
         self.current_scene = GameScene.MAIN_SHIP
         self.current_map = self.main_map
 
-        self.player.x = self.current_map.x
-        self.player.y = self.current_map.y
+        self.player.x = self.current_map.player_start_x
+        self.player.y = self.current_map.player_start_y
 
     def HandleDirection(self):
         # sets the direction x and y variables based on what key we pressed
@@ -451,7 +448,7 @@ class TerrusRequiem(PyneEngine):
         cache = self.TextCache() if self.HasTextCache() else None
         
         if self.current_scene not in [GameScene.MAIN_MENU, GameScene.CREDITS, GameScene.HELP]:
-            if self.KeyPressed(pygame.K_SPACE):
+            if self.KeyPressed(pygame.K_z):
                 self.dialogue_manager.on_confirm()
         
         if self.current_scene == GameScene.MAIN_MENU:
@@ -485,22 +482,68 @@ class TerrusRequiem(PyneEngine):
         # the dreaded switch case
         match self.current_scene:
             case GameScene.MAIN_SHIP:
-                # we can move and interact in the overworld
                 self.HandleHelpScreen()
-                self.HandleMoveAndInteract()
 
-                if cache == '>':
-                    # player is attempting to enter an area
-                    
-                    for area in self.current_planet.areas:
-                        if area.x == self.player.x and area.y == self.player.y:
-                            self.LoadMap(area, self.current_overlapping_element.symbol == 'b')
+                if self.KeyPressed(K_SPACE):
+                    self.player.health = max(0, self.player.health - 10)
 
-                            self.AddMessage(f"You entered '{self.current_map.name}'.")
+                if not self.waiting_for_direction:
+                    move_interact_entity = self.HandleMoveAndInteract()
+                else:
+                    move_interact_entity = None
 
-                            self.GenerateSolidsMap()
+                has_direction = self.HandleDirection()
 
-                            break
+                if has_direction:
+                    match self.waiting_action:
+                        case Actions.CLOSE_DOOR:
+                            # check every entity to see if it is a door/hatch
+                            for e in self.current_map.entities:
+                                if e.x == self.player.x + self.direction_x and e.y == self.player.y + self.direction_y:
+                                    if type(e) in [Door, Hatch]:
+                                        if e.solid:
+                                            self.AddMessage(f"{'Door' if type(e) == Door else 'Hatch'} is already closed.")
+                                        else:
+                                            self.AddMessage(f"You close the {'door' if type(e) == Door else 'hatch'}.")
+
+                                            e.Close()
+
+                                            self.advance_time = True
+
+                                            self.action_time = action_times[Actions.CLOSE_DOOR]
+
+                                            self.GenerateSolidsMap()
+                                    else:
+                                        self.AddMessage("You can't close that!")
+
+                    # reset
+                    self.waiting_action = None
+                    self.waiting_for_direction = False
+
+                if cache == 'c':
+                    # player is attempting to close a door
+                    self.waiting_for_direction = True
+                    self.waiting_action = Actions.CLOSE_DOOR
+                    self.AddMessage("Close door in what direction?")
+
+                if move_interact_entity:
+                    # if we move into an entity, interact with it and advance time
+                    self.advance_time = True
+
+                    move_interact_entity.PlayerMoveInteract(self, self.player)
+                    self.action_time = move_interact_entity.move_interact_time
+
+                    # remove the entity if it has marked itself for removal
+                    # (usually upon death)
+                    if move_interact_entity.to_remove:
+                        self.current_map.entities.remove(move_interact_entity)
+
+                    if type(move_interact_entity) in [Door, Hatch]:
+                        # If we open a door, regenerate the solids map
+                        self.GenerateSolidsMap()
+
+                if self.advance_time:
+                    self.AdvanceTime()
            
             case GameScene.CAVE:
                 self.HandleHelpScreen()
@@ -576,7 +619,7 @@ class TerrusRequiem(PyneEngine):
             show_dialogue = True
 
             # draw the '@' for the player
-            self.DrawChar('@', (self.Color.LIGHT_MAGENTA, self.Color.BACKGROUND), self.player.x, self.player.y, self.game_window)
+            self.DrawChar('@', (self.Color.LIGHT_RED, self.Color.BACKGROUND), self.player.x, self.player.y, self.game_window)
 
             if self.current_map:
                 # compute fov
@@ -597,6 +640,18 @@ class TerrusRequiem(PyneEngine):
                         if self.current_map and self.current_map.visibility[y * self.current_map.width + x] and not active_visibility[y * self.current_map.width + x]:
                             e = self.game_window.GetAt(x, y)
                             self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x, y, self.game_window)
+
+                # draw health
+                h = self.player.health / self.player.max_health
+                h = int(h * 10)
+                s = f"[{'='*h}{'-'*(10-h)}]"
+                self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(s), self.TerminalHeight() - 3)
+                c = self.Color.GREEN if h >= 8 else self.Color.YELLOW
+                if h < 4:
+                    c = self.Color.RED
+                for i in range(h):
+                    self.SetColor((c, self.Color.BACKGROUND), self.TerminalWidth() - len(s) + 1 + i, self.TerminalHeight() - 3)
+                self.DrawText(t := f"HP: {self.player.health}/{self.player.max_health}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 2)
 
             if len(self.messages):
                 # If we have messages, display the first one

@@ -24,6 +24,8 @@ class Player:
 
         self.speed = 100
 
+        self.health = self.max_health = 100
+
     def ChanceToHitMelee(self):
         return + (self.perception / 10)
     

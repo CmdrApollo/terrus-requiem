@@ -1,4 +1,4 @@
-VERSION = "0.1"
+VERSION = "1.0"
 
 import pygame
 import math
@@ -168,7 +168,7 @@ class PyneEngine:
     def DarkenColor(self, color):
         r, g, b = int(color[1] + color[2], 16), int(color[3] + color[4], 16), int(color[5] + color[6], 16)
 
-        return '#' + ''.join([hex(int(x * 0.75)).removeprefix('0x').rjust(2, '0') for x in [r,g,b]])
+        return '#' + ''.join([hex(int(x * 0.5)).removeprefix('0x').rjust(2, '0') for x in [r,g,b]])
 
     def OnConstruct(self):
         pass

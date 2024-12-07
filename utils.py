@@ -7,7 +7,7 @@ terminal_width, terminal_height = 76, 30
 def string_to_seed(string):
     return int(sum([ord(string[i]) for i in range(len(string))]))
 
-def wallify(buffer, engine):
+def wallify(buffer, engine, colorsceme=0):
     neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, 1), (1, 1), (1, -1), (-1, -1)]
 
     for x in range(buffer.width):
@@ -22,7 +22,7 @@ def wallify(buffer, engine):
     for x in range(buffer.width):
         for y in range(buffer.height):
             if buffer.GetAt(x, y).symbol == ' ':
-                engine.DrawChar(' ', (engine.Color.WHITE, engine.Color.BLACK), x, y, buffer)
+                engine.DrawChar('.', (engine.Color.DARK_GRAY, engine.Color.BLACK), x, y, buffer)
 
 def crop(buffer, engine):
     min_x, max_x = 0xffff, 0

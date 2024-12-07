@@ -74,11 +74,25 @@ class Hatch(Door):
     def __init__(self, x, y, locked = False):
         super().__init__(x, y, locked, '%', (PyneEngine.Color.GRAY, PyneEngine.Color.BACKGROUND))
 
+class AreaEntrance(Entity):
+    def __init__(self, x, y):
+        super().__init__(">", (PyneEngine.Color.WHITE, PyneEngine.Color.BACKGROUND), x, y)
+
+    def PlayerMoveInteract(self, engine, player):
+        pass
+        # engine.dialogue_manager.queue_text([
+        #     "Really leave?",
+        #     "[y]es",
+        #     "[n]o"
+        # ])
+
 # ==============================================================================================================
 
 class BasicEnemy(Entity):
     def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, char, c_pair):
         super().__init__(char, c_pair, x, y)
+
+        self.solid = True
 
         self.hp     = hp
         self.max_hp = max_hp
@@ -151,80 +165,11 @@ class BasicEnemy(Entity):
             self.x += force_x
         if 0 <= self.y + force_y <= engine.current_map.height - 1 and solids[self.x, self.y + force_y]:
             self.y += force_y
-
-class CrazedHuman(BasicEnemy):
-    def __init__(self, x, y):
-        super().__init__(30, 30, "Crazed Human", 0.1, x, y, 'c', (PyneEngine.Color.LIGHT_YELLOW, PyneEngine.Color.BACKGROUND))
-        
+    
 class Rat(BasicEnemy):
     def __init__(self, x, y):
         super().__init__(30, 30, "Rat", 0.1, x, y, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
-
-# ==============================================================================================================
-
-class NPC(Entity):
-    def __init__(self, name, dialogue, color, x, y):
-        super().__init__('@', (color, PyneEngine.Color.BLACK), x, y)
-        self.name = name
-
-        d = [[self.name] + x for x in dialogue]
-
-        self.dialogue = d
     
-        self.is_enemy = False
-
-        self.move_interact_time = 100 # time to talk
-
-    def Kill(self):
-        self.to_remove = True
-
-    def PlayerMoveInteract(self, engine, player):
-        for t in self.dialogue:
-            engine.dialogue_manager.queue_text(t)
-    
-    def OnMyTurn(self, engine):
-        # TODO FIX THIS + IMPLEMENT UNIVERSAL COLLISION DETECTION
-        # direction = random.randint(0, 3)
-        # match direction:
-        #     case 0:
-        #         self.y -=1
-        #     case 1:
-        #         self.x += 1
-        #     case 2:
-        #         self.y += 1
-        #     case 3:
-        #         self.x -= 1
-        pass
-
-class Zaram(NPC):
+class Chimp(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__("Zaram", 
-                        [
-                            [
-                                "Hello, traveler.",
-                                "I am <#80FF80>Zaram</>, and this is <#FFFF80>Yoore</>.",
-                                "We are a humble community that pride ourselves",
-                                "on our hunting and gathering abilities."
-                            ],
-                            [
-                                "What's this?"
-                                "... You wish to leave <#FFFF80>XA-B1-12</>?",
-                                "In that case you will need a <#FF8080>ship</>, my friend."
-                            ],
-                            [
-                                "The easiest way to get a <#FF8080>ship</> is to build one, I'm",
-                                "afraid. You'll need to scavenge the parts from the",
-                                "various <#FFFF80>shipwrecks</> scattered across the surface of",
-                                "the planet."
-                            ],
-                            [
-                                "If you are up for the task, I can point you in the",
-                                "direction of the nearest one. Be warned, however,",
-                                "that a <#FFFF80>shipwreck</> is a dangerous place. Many an",
-                                "unsavory individual tend to find refuge within",
-                                "them."
-                            ],
-                            [
-                                "I wish you good luck on your travels, my friend!"
-                            ]
-                        ], PyneEngine.Color.LIGHT_RED, x, y)
+        super().__init__(30, 30, "Chimp", 0.1, x, y, 'c', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))

@@ -49,13 +49,13 @@ class ShipArea(Map):
         for i in range(3):
             for j in range(3):
                 if random.random() <= 0.5:
-                    x, y, w, h = i * (self.data.width // 3) + self.data.width // 6, j * (self.data.height // 3) + self.data.height // 6, random.randint(8, 12), random.randint(4, 6)
+                    x, y, w, h = i * (self.data.width // 3) + self.data.width // 6, j * (self.data.height // 3) + self.data.height // 6, random.randint(8, 12), random.randint(3, 4)
                     self.engine.FillRect('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BLACK), x - w // 2, y - h // 2, w, h, self.data)
 
                     v = random.random()
                     if v <= 0.5:
                         # place an enemy in the room
-                        self.entities.append(random.choice([Rat, Chimp])(x + 3, y + 2))
+                        self.entities.append(random.choice([Rat, Chimp])(x, y))
                     elif v <= 1 and entrancex == -1:
                         entrancex = x - w // 2 + random.randint(0, w - 1)
                         entrancey = y - h // 2 + random.randint(0, h - 1)

@@ -89,13 +89,15 @@ class AreaEntrance(Entity):
 # ==============================================================================================================
 
 class BasicEnemy(Entity):
-    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, char, c_pair):
+    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, damage, char, c_pair):
         super().__init__(char, c_pair, x, y)
 
         self.solid = True
 
         self.hp     = hp
         self.max_hp = max_hp
+
+        self.damage = damage
 
         self.name = name
 
@@ -118,6 +120,9 @@ class BasicEnemy(Entity):
             self.waited_time -= self.speed
             
             self.OnMove(engine)
+
+            if abs(self.x - engine.player.x) <= 1 and abs(self.y - engine.player.y) <= 1:
+                engine.player.AttemptToDamage(self.name, self.damage + random.randint(-1, 1))
 
     def OnMove(self, engine):
         solids = engine.solids
@@ -168,8 +173,8 @@ class BasicEnemy(Entity):
     
 class Rat(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Rat", 0.1, x, y, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+        super().__init__(15, 15, "Rat", 0.1, x, y, 5, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
     
 class Chimp(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Chimp", 0.1, x, y, 'c', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+        super().__init__(30, 30, "Chimp", 0.1, x, y, 7, 'c', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))

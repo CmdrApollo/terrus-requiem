@@ -91,6 +91,9 @@ class TerrusRequiem(PyneEngine):
 
         self.GenerateSolidsMap()
 
+    def OnGameOver(self):
+        pass
+
     # add messages to the queue
     def AddMessage(self, message):
         self.messages.append(message)

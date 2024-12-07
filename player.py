@@ -21,10 +21,25 @@ class Player:
         self.sight_distance = 5 + self.perception
 
         self.melee_weapon = Club()
+        self.ranged_weapon = None
+        self.armor = None
 
         self.speed = 100
 
         self.health = self.max_health = 100
+
+    def AttemptToDamage(self, name, dmg):
+        d = dmg
+        if random.randint(1, 10) <= self.dexterity:
+            self.engine.AddMessage(f"You dodged the attack from the {name}!")
+            return
+        self.health = max(0, self.health - d)
+        self.engine.AddMessage(f"The {name} hit you for {d} damage!")
+        if self.health == 0:
+            self.engine.AddMessage(f"You died!")
+
+            # TODO write this function...
+            self.engine.OnGameOver()
 
     def ChanceToHitMelee(self):
         return + (self.perception / 10)

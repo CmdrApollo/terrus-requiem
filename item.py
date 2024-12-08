@@ -17,6 +17,8 @@ class Item:
         self.item_class = item_class
         self.char = char
         self.color = color
+        
+        self.destroyed = False
     
 class MeleeWeapon(Item):
     def __init__(self, name: str, weapon_type: int, roll: Roll, char: str, color: str):
@@ -30,7 +32,15 @@ class MeleeWeapon(Item):
     
 class Club(MeleeWeapon):
     def __init__(self):
-        super().__init__("Club", ItemClass.MELEE_WEAPON, Roll(2, 4, 2), '*', PyneEngine.Color.BROWN) # 2d4+2
+        super().__init__("Club", MeleeWeaponType.BLUNT, Roll(2, 4, 2), '*', PyneEngine.Color.ORANGE) # 2d4+2 blunt
+    
+class BasicSpear(MeleeWeapon):
+    def __init__(self):
+        super().__init__("Bsc. Spear", MeleeWeaponType.SHARP, Roll(1, 6, 4), '*', PyneEngine.Color.BROWN) # 1d6+4 sharp
+    
+class AdvancedSpear(MeleeWeapon):
+    def __init__(self):
+        super().__init__("Adv. Spear", MeleeWeaponType.SHARP, Roll(2, 6, 4), '*', PyneEngine.Color.BROWN) # 1d6+4 sharp
 
 class RangedWeapon(Item):
     def __init__(self, name: str, proj_char: str, proj_color: str, weapon_type: int, roll: Roll, char: str, color: str):
@@ -44,15 +54,37 @@ class RangedWeapon(Item):
     def roll_damage(self, external_modifier=0):
         return self.roll.roll() + external_modifier
 
-class Blaster(RangedWeapon):
+class BasicBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Blaster", '/', PyneEngine.Color.RED, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '*', PyneEngine.Color.GRAY) # 1d6+2
+        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), '(', PyneEngine.Color.GRAY) # 1d6+2
+
+class AdvancedBlaster(RangedWeapon):
+    def __init__(self):
+        super().__init__("Adv. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '(', PyneEngine.Color.WHITE) # 2d6+2
 
 class Armor(Item):
     def __init__(self, name: str, pv: int, char: str, color: str):
         super().__init__(name, ItemClass.ARMOR, char, color)
         self.pv = pv
+    
+    def FilterDamage(self, d):
+        dmg = max(0, d - self.pv)
+        if dmg:
+            self.pv -= 1
+
+            if self.pv <= 0:
+                self.pv = 0
+                self.destroyed = True
+        return dmg
 
 class LightArmor(Armor):
     def __init__(self):
-        super().__init__("Light Armor", 6, '%', PyneEngine.Color.GRAY)
+        super().__init__("Light Armor", 6, '%', PyneEngine.Color.BROWN)
+
+class MediumArmor(Armor):
+    def __init__(self):
+        super().__init__("Medium Armor", 8, '%', PyneEngine.Color.GRAY)
+
+class HeavyArmor(Armor):
+    def __init__(self):
+        super().__init__("Heavy Armor", 10, '%', PyneEngine.Color.WHITE)

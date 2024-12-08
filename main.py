@@ -92,6 +92,7 @@ class TerrusRequiem(PyneEngine):
         self.targetx = -1
         self.targety = -1
         self.targeting = False
+        self.questioning = False
 
     def OnGameOver(self):
         pass
@@ -400,7 +401,7 @@ class TerrusRequiem(PyneEngine):
     def HandleDirection(self):
         # sets the direction x and y variables based on what key we pressed
         # returns true if no longer waiting for a direction (key has been pressed)
-        if self.waiting_for_direction or self.targeting:
+        if self.waiting_for_direction or self.targeting or self.questioning:
             self.waiting_for_direction = False
 
             if   self.KeyPressed(K_KP8) or self.KeyPressed(K_UP)   : self.direction_x, self.direction_y = + 0, - 1
@@ -518,7 +519,7 @@ class TerrusRequiem(PyneEngine):
                 if self.KeyPressed(K_SPACE):
                     self.player.health = max(0, self.player.health - 10)
 
-                if not self.waiting_for_direction and not self.targeting:
+                if not self.waiting_for_direction and not (self.targeting or self.questioning):
                     move_interact_entity = self.HandleMoveAndInteract()
                 else:
                     move_interact_entity = None
@@ -575,11 +576,19 @@ class TerrusRequiem(PyneEngine):
                 
                 if cache == 't':
                     # player is entering/leaving targeting mode
+                    self.questioning = False
                     self.targeting = not self.targeting
                     self.targetx = self.player.x if self.targeting else -1
                     self.targety = self.player.y if self.targeting else -1
 
-                if self.targeting and has_direction:
+                if cache == '?':
+                    # player is entering/leaving questioning mode
+                    self.targeting = False
+                    self.questioning = not self.questioning
+                    self.targetx = self.player.x if self.questioning else -1
+                    self.targety = self.player.y if self.questioning else -1
+
+                if (self.targeting or self.questioning) and has_direction:
                     self.targetx += self.direction_x
                     self.targety += self.direction_y
                 
@@ -589,7 +598,7 @@ class TerrusRequiem(PyneEngine):
                     self.player.FireWeapon(self.targetx, self.targety)
                     self.targetx = self.targety = -1
 
-                if move_interact_entity and not self.targeting:
+                if move_interact_entity and not (self.targeting or self.questioning):
                     # if we move into an entity, interact with it and advance time
                     self.advance_time = True
 
@@ -770,9 +779,17 @@ class TerrusRequiem(PyneEngine):
         if show_dialogue:
             self.dialogue_manager.draw(self)
 
-        if self.targetx + 1 and (pygame.time.get_ticks() // 500) % 2:
+        if self.targetx + 1:
             if self.targetx - self.camx < self.game_window.width and self.targety - self.camy < self.game_window.height:
-                self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, self.targety - self.camy)
+                if (pygame.time.get_ticks() // 500) % 2:
+                    self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, self.targety - self.camy)
+                if self.questioning:
+                    if active_visibility[self.targety * self.current_map.width + self.targetx]:
+                        t = {'.': "Empty space.", '#': "A wall.", '=': "Water."}[self.current_map.data.GetAt(self.targetx, self.targety).symbol]
+                        for e in self.current_map.entities:
+                            if e.x == self.targetx and e.y == self.targety:
+                                t = e.name + "."
+                        self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
 
         return True
 

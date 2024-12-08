@@ -8,6 +8,8 @@ import tcod.random
 map_width = terminal_width
 map_height = terminal_height - 5
 
+RANDOM_ITEM_CHANCE = 0.001
+
 class Map:
     def __init__(self, name, engine, x, y, w=map_width, h=map_height):
         self.name = name
@@ -36,7 +38,7 @@ class ShipArea(Map):
         self.danger = danger
 
     def generate(self):
-        monsters = [Rat, Chimp]
+        monsters = [Rat, RockDemon]
 
         self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
 
@@ -100,7 +102,8 @@ class Cave(Map):
         super().__init__(name, engine, w // 2 - 1, h // 2 - 1, w, h)
     
     def generate(self):
-        monsters = [Rat, Chimp]
+        monsters = [Rat, RockDemon]
+        items = [Club, LightArmor]
 
         self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
 
@@ -110,8 +113,8 @@ class Cave(Map):
             self.engine.DrawChar('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), x, y, self.data)
             if i == 0:
                 self.entities.append(AreaEntrance(x, y))
-            if i % 50 == 0:
-                self.entities.append(ItemPickup(LightArmor(), x, y))
+            if random.random() <= RANDOM_ITEM_CHANCE:
+                self.entities.append(ItemPickup(random.choice(items)(), x, y))
             if random.random() <= self.danger / 1000:
                 self.entities.append(random.choice(monsters)(x, y))
 

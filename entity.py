@@ -5,11 +5,13 @@ from item import *
 from copy import copy
 
 class Entity:
-    def __init__(self, char, c_pair, x, y):
+    def __init__(self, name, char, c_pair, x, y):
         self.repr = ScrElement(char, c_pair[0], c_pair[1])
         
         self.x = x
         self.y = y
+
+        self.name = name
 
         self.solid = False
 
@@ -35,8 +37,8 @@ class Entity:
 # ==============================================================================================================
 
 class ShipPart(Entity):
-    def __init__(self, char, c_pair, x, y):
-        super().__init__(char, c_pair, x, y)
+    def __init__(self, name, char, c_pair, x, y):
+        super().__init__(name, char, c_pair, x, y)
 
         self.solid = True
 
@@ -47,13 +49,11 @@ class ShipPart(Entity):
 
 class ControlPanel(ShipPart):
     def __init__(self, x, y):
-        super().__init__("M", (PyneEngine.Color.LIGHT_CYAN, PyneEngine.Color.BACKGROUND), x, y)
-
-        self.name = "Control Panel"
+        super().__init__("Control Panel", "M", (PyneEngine.Color.LIGHT_CYAN, PyneEngine.Color.BACKGROUND), x, y)
 
 class Door(Entity):
     def __init__(self, x, y, locked = False, char = None, c_pair = None):
-        super().__init__(char if char else '+', c_pair if c_pair else (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND), x, y)
+        super().__init__("Door", char if char else '+', c_pair if c_pair else (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND), x, y)
         self.locked = locked
         self.solid = True
         self.og_char = copy(char)
@@ -76,24 +76,20 @@ class Door(Entity):
 class Hatch(Door):
     def __init__(self, x, y, locked = False):
         super().__init__(x, y, locked, '%', (PyneEngine.Color.GRAY, PyneEngine.Color.BACKGROUND))
+        self.name = "Hatch"
 
 class AreaEntrance(Entity):
     def __init__(self, x, y):
-        super().__init__(">", (PyneEngine.Color.WHITE, PyneEngine.Color.BACKGROUND), x, y)
+        super().__init__("Entrance", ">", (PyneEngine.Color.WHITE, PyneEngine.Color.BACKGROUND), x, y)
 
     def PlayerMoveInteract(self, engine, player):
         pass
-        # engine.dialogue_manager.queue_text([
-        #     "Really leave?",
-        #     "[y]es",
-        #     "[n]o"
-        # ])
 
 # ==============================================================================================================
 
 class BasicEnemy(Entity):
     def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, damage, speed, char, c_pair):
-        super().__init__(char, c_pair, x, y)
+        super().__init__(name, char, c_pair, x, y)
 
         self.solid = True
 
@@ -103,8 +99,6 @@ class BasicEnemy(Entity):
         self.damage = damage
 
         self.speed = speed
-
-        self.name = name
 
         self.chance_to_dodge = chance_to_dodge
 
@@ -180,13 +174,13 @@ class BasicEnemy(Entity):
 class Rat(BasicEnemy):
     def __init__(self, x, y):
         super().__init__(15, 15, "Rat", 0.1, x, y, 5, 120, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
-    
-class Chimp(BasicEnemy):
+
+class RockDemon(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Chimp", 0.1, x, y, 7, 150, 'c', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+        super().__init__(30, 30, "Rock Demon", 0.1, x, y, 10, 150, 'R', (PyneEngine.Color.DARK_RED, PyneEngine.Color.BACKGROUND))
 
 # ===============================================================================================
 class ItemPickup(Entity):
     def __init__(self, item, x, y):
-        super().__init__(item.char, (item.color, PyneEngine.Color.BACKGROUND), x, y)
+        super().__init__(item.name, item.char, (item.color, PyneEngine.Color.BACKGROUND), x, y)
         self.item = item

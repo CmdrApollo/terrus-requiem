@@ -18,8 +18,8 @@ class Player:
         self.sight_distance = 5 + self.perception
 
         self.melee_weapon = Club()
-        self.ranged_weapon = Blaster()
-        self.armor = None
+        self.ranged_weapon = BasicBlaster()
+        self.armor = LightArmor()
 
         self.speed = 100
 
@@ -47,13 +47,22 @@ class Player:
         if random.randint(1, 10) <= self.dexterity - 1:
             self.engine.AddMessage(f"You dodged the attack from the {name}!")
             return
-        self.health = max(0, self.health - d)
-        self.engine.AddMessage(f"The {name} hit you for {d} damage!")
-        if self.health == 0:
-            self.engine.AddMessage(f"You died!")
+        if self.armor:
+            d = self.armor.FilterDamage(d)
+        if d == 0:
+            self.engine.AddMessage(f"Your armor protected you from the {name}!")
+        else:
+            self.health = max(0, self.health - d)
+            self.engine.AddMessage(f"The {name} hit you for {d} damage!")
+            if self.armor:
+                self.engine.AddMessage(f"Your armor ablated!")
+                if self.armor.destroyed:
+                    self.engine.AddMessage(f"Your armor was destroyed!")
+            if self.health == 0:
+                self.engine.AddMessage(f"You died!")
 
-            # TODO write this function...
-            self.engine.OnGameOver()
+                # TODO write this function...
+                self.engine.OnGameOver()
 
     def ChanceToHitMelee(self):
         return + ((self.perception + 1) / 10)

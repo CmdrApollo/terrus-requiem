@@ -35,12 +35,6 @@ class GameScene:
 
     HELP = 6
 
-class Actions:
-    CLOSE_DOOR = 0
-    FIRE_WEAPON = 1
-
-action_times = [ 75, 50 ]
-
 class TerrusRequiem(PyneEngine):
     # name of the game and title of the window
     TITLE = GAME_NAME
@@ -83,7 +77,6 @@ class TerrusRequiem(PyneEngine):
         self.action_time = 0
 
         # if the program should wait for a direction and what action it's waiting for
-        # TODO: currently only close door action
         self.waiting_for_direction = False
         self.waiting_action = None
 
@@ -504,7 +497,7 @@ class TerrusRequiem(PyneEngine):
                         self.player.firing = False
 
                         self.advance_time = True
-                        self.action_time = action_times[Actions.FIRE_WEAPON]
+                        self.action_time = action_times[Actions.RANGED_ATTACK]
 
                         return True
                     
@@ -518,7 +511,7 @@ class TerrusRequiem(PyneEngine):
                             self.player.firing = False
                             
                             self.advance_time = True
-                            self.action_time = action_times[Actions.FIRE_WEAPON]
+                            self.action_time = action_times[Actions.RANGED_ATTACK]
 
                     return True
 
@@ -563,6 +556,22 @@ class TerrusRequiem(PyneEngine):
                     self.waiting_for_direction = True
                     self.waiting_action = Actions.CLOSE_DOOR
                     self.AddMessage("Close door in what direction?")
+
+                if cache == 'p':
+                    # player is attempting to pick up an item
+                    self.advance_time = True
+                    self.action_time = action_times[Actions.PICKUP]
+
+                    for e in self.current_map.entities:
+                        if e.x == self.player.x and e.y == self.player.y:
+                            if type(e) == ItemPickup:
+                                if self.player.CanPickupItem():
+                                    self.player.GiveItem(e.item)
+                                    self.AddMessage(f"Picked up the {e.item.name}.")
+                                    e.to_remove = True
+                                    self.current_map.entities.remove(e)
+                                else:
+                                    self.AddMessage("Insufficient space.")
                 
                 if cache == 't':
                     # player is entering/leaving targeting mode

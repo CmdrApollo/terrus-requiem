@@ -1,4 +1,5 @@
 from item import *
+from utils import *
 import math
 
 class Player:
@@ -30,6 +31,16 @@ class Player:
         self.heading = 0
         self.projx = 0
         self.projy = 0
+
+        self.inventory = []
+
+        self.capacity = 20
+
+    def CanPickupItem(self):
+        return len(self.inventory) < self.capacity
+
+    def GiveItem(self, item):
+        self.inventory.append(item)
 
     def AttemptToDamage(self, name, dmg):
         d = dmg
@@ -73,6 +84,9 @@ class Player:
                     entity.Kill()
         else:
             self.engine.AddMessage(f"You missed the {entity.name}.")
+                            
+        self.engine.advance_time = True
+        self.engine.action_time = action_times[Actions.RANGED_ATTACK]
     
     def AttackRanged(self, entity):
         if random.random() <= self.ChanceToHitRanged():

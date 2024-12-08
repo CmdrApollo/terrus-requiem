@@ -5,13 +5,21 @@ from entity import *
 terminal_width, terminal_height = 90, 40
 MAPWIDTH, MAPHEIGHT = 200, 80
 
+class Actions:
+    CLOSE_DOOR = 0
+    MELEE_ATTACK = 1
+    RANGED_ATTACK = 2
+    PICKUP = 3
+
+action_times = [ 75, 100, 50, 100 ]
+
 def string_to_seed(string):
     return int(sum([ord(string[i]) for i in range(len(string))]))
 
 def wallify(buffer, engine, colorscheme=0):
     schemes = [
-        [engine.Color.LIGHT_BLUE, engine.Color.GRAY, engine.Color.DARK_GRAY],
-        [engine.Color.BROWN, engine.Color.DARK_BROWN] * 2 + [engine.Color.GRAY],
+        [engine.Color.LIGHT_BLUE, engine.Color.GRAY, engine.Color.DARK_GRAY],    # ship
+        [engine.Color.BROWN, engine.Color.DARK_BROWN] * 2 + [engine.Color.GRAY], # caves
     ]
 
     neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, 1), (1, 1), (1, -1), (-1, -1)]

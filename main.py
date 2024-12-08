@@ -20,6 +20,8 @@ help_screen1 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen2 = PyneEngine.Buffer(terminal_width, terminal_height)
 help_screen3 = PyneEngine.Buffer(terminal_width, terminal_height)
 
+panelsize = 32
+
 DEBUG = False
 
 class GameScene:
@@ -47,7 +49,7 @@ class TerrusRequiem(PyneEngine):
         super().__init__(terminal_width, terminal_height, target_size)
 
         # where most things get rendered besides the 5 lines of text
-        self.game_window = self.Buffer(self.TerminalWidth(), self.TerminalHeight() - 5)
+        self.game_window = self.Buffer(self.TerminalWidth() - panelsize, self.TerminalHeight() - 4)
     
         self.player = Player(self, self.game_window.width // 2, self.game_window.height // 2)
 
@@ -692,29 +694,31 @@ class TerrusRequiem(PyneEngine):
                 h = self.player.health / self.player.max_health
                 h = int(h * 10)
                 s = f"[{'='*h}{'-'*(10-h)}]"
-                self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(s), self.TerminalHeight() - 3)
+                self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 1)
                 c = self.Color.GREEN if h >= 8 else self.Color.YELLOW
                 if h < 4:
                     c = self.Color.RED
                 for i in range(h):
-                    self.SetColor((c, self.Color.BACKGROUND), self.TerminalWidth() - len(s) + 1 + i, self.TerminalHeight() - 3)
-                self.DrawText(t := f"HP: {self.player.health}/{self.player.max_health}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 2)
+                    self.SetColor((c, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 2 + i, 1)
+                self.DrawText(t := f"HP: {self.player.health}/{self.player.max_health}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 2)
 
                 # draw energy
                 h = self.player.energy / self.player.max_energy
                 h = int(h * 10)
                 s = f"[{'='*h}{'-'*(10-h)}]"
-                self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(s) // 2, self.TerminalHeight() - 3)
+                self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(s) - 1, 1)
                 for i in range(h):
-                    self.SetColor((self.Color.MAGENTA, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(s) // 2 + 1 + i, self.TerminalHeight() - 3)
-                self.DrawText(t := f"SP: {self.player.energy}/{self.player.max_energy}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, self.TerminalHeight() - 2)
+                    self.SetColor((self.Color.MAGENTA, self.Color.BACKGROUND), self.TerminalWidth() - len(s) + i, 1)
+                self.DrawText(t := f"SP: {self.player.energy}/{self.player.max_energy}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 2)
 
 
                 # draw weapons
                 w = "Ml Wp: " + (self.player.melee_weapon.name + " " + str(self.player.melee_weapon.roll) if self.player.melee_weapon else "nul")
-                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 3)
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 10)
                 w = "Rg Wp: " + (self.player.ranged_weapon.name + " " + str(self.player.ranged_weapon.roll) if self.player.ranged_weapon else "nul")
-                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 2)
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 11)
+                w = "Armor: " + (self.player.armor.name + " (" + str(self.player.armor.pv) + "PV)" if self.player.armor else "nul")
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 12)
 
                 # draw armor stats
                 self.DrawText(t := f"PV: {self.player.armor.pv if self.player.armor else 0}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 1)
@@ -740,16 +744,26 @@ class TerrusRequiem(PyneEngine):
                     lines = [msg]
 
                 # draw the text
-                self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
+                self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 1, self.TerminalHeight() - 3)
 
         # put the game window onto the main screen
-        self.BlitBuffer(self.game_window, 0, 2)
+        self.BlitBuffer(self.game_window, 0, 0)
+
+        # draw panels
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 4, self.TerminalWidth() - 1, 3)
+
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 8)
+        self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
+
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 9, panelsize - 1, self.TerminalHeight() - 14)
+        self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 9)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)
 
         if self.targetx + 1 and (pygame.time.get_ticks() // 500) % 2:
-            self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, 2 + self.targety - self.camy)
+            if self.targetx - self.camx < self.game_window.width and self.targety - self.camy < self.game_window.height:
+                self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, self.targety - self.camy)
 
         return True
 

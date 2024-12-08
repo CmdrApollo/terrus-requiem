@@ -55,7 +55,7 @@ class DialogueManager:
                 continue
 
             if drawing:
-                engine.DrawChar(char, (color, PyneEngine.Color.BLACK), cx, y)
+                engine.DrawChar(char, (color, PyneEngine.Color.BACKGROUND), cx, y)
                 fline += char
                 cx += 1
             else:
@@ -69,13 +69,13 @@ class DialogueManager:
 
             x, y = engine.TerminalWidth() // 2 - w // 2, engine.TerminalHeight() // 2 - h // 2
 
-            engine.FillRect(' ', (self.border_color, engine.Color.BLACK), x, y, w, h)
-            engine.DrawRect((self.border_color, engine.Color.BLACK), x, y, w, h)
-            engine.DrawText(t := self.queued_text[0][0], (self.text_color, engine.Color.BLACK), x + w // 2 - 1 - len(t) // 2, y + 1)
-            engine.DrawHLine((self.text_color, engine.Color.BLACK), x + 1, y + 2, x + w)
+            engine.FillRect(' ', (self.border_color, engine.Color.BACKGROUND), x, y, w, h)
+            engine.DrawRect((self.border_color, engine.Color.BACKGROUND), x, y, w, h)
+            engine.DrawText(t := self.queued_text[0][0], (self.text_color, engine.Color.BACKGROUND), x + w // 2 - 1 - len(t) // 2, y + 1)
+            engine.DrawHLine((self.text_color, engine.Color.BACKGROUND), x + 1, y + 2, x + w)
 
             for i, line in enumerate(self.queued_text[0][1:]):
                 self.draw_tagged_line(line, engine, x + 1, i + y + 3, self.text_color)
 
             if len(self.queued_text) > 1 and (pygame.time.get_ticks() // 750) % 2:
-                engine.DrawChar(">", (self.text_color, engine.Color.BLACK), x + w - 1, y + 1)
+                engine.DrawChar(">", (self.text_color, engine.Color.BACKGROUND), x + w - 1, y + 1)

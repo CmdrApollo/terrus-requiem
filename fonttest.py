@@ -1,16 +1,16 @@
 import pygame
 
-FONT = pygame.image.load('bitfont.png')
+FONT = pygame.image.load('px_font.png')
 
 def render_char(win, char, x, y, color = 'red'):
     if 0x20 <= ord(char) < 0x80:
         fx = (ord(char) - 0x20) % 0x10
         fy = (ord(char) - 0x20) // 0x10
 
-        t = FONT.subsurface((fx * 8, fy * 8, 8, 8))
+        t = FONT.subsurface((fx * 10, fy * 12, 10, 12))
         m = pygame.mask.from_surface(t)
 
-        f = pygame.Surface((8, 8))
+        f = pygame.Surface((10, 12))
 
         f.fill('black')
         m2 = pygame.mask.from_surface(f)
@@ -32,9 +32,9 @@ def render_text(win, text, x, y, color = 'red'):
         elif char == '@':
             c = 'pink'
         render_char(win, char, cx, y, c)
-        cx += 9
+        cx += 11
 
-WIDTH, HEIGHT = 9 * 32 - 1, 18 * 9 - 1
+WIDTH, HEIGHT = 320, 240
 WIN = pygame.display.set_mode((WIDTH * 4, HEIGHT * 4))
 screen = pygame.Surface((WIDTH, HEIGHT))
 
@@ -52,22 +52,22 @@ while run:
     
     screen.fill('black')
 
-    render_text(screen, "######################", 0, -9 + 9 , '#80ff80')
-    render_text(screen, "#?????#..............#", 0, -9 + 18, '#80ff80')
-    render_text(screen, "#######..............#", 0, -9 + 27, '#80ff80')
-    render_text(screen, "#.............>......#", 0, -9 + 36, '#80ff80')
-    render_text(screen, "#....................#", 0, -9 + 45, '#80ff80')
-    render_text(screen, "#......D.............#", 0, -9 + 54, '#80ff80')
-    render_text(screen, "#....................#", 0, -9 + 63, '#80ff80')
-    render_text(screen, "#....................#", 0, -9 + 72, '#80ff80')
-    render_text(screen, "#....................#", 0, -9 + 81, '#80ff80')
-    render_text(screen, "#....................#", 0, -9 + 90, '#80ff80')
-    render_text(screen, "#####........@.......#", 0, -9 + 99, '#80ff80')
-    render_text(screen, "#.C..................#", 0, -9 + 108, '#80ff80')
-    render_text(screen, "#...#................#", 0, -9 + 117, '#80ff80')
-    render_text(screen, "######################", 0, -9 + 126, '#80ff80')
-    render_text(screen, "commander, do you copy?", 0, -9 + 144, '#ff8080')
-    render_text(screen, "blah blah blah!!!", 0, -9 + 153, '#8080ff')
+    render_text(screen, "######################", 0, -9 + 13 , '#80ff80')
+    render_text(screen, "#?????#..............#", 0, -9 + 13 * 2, '#80ff80')
+    render_text(screen, "#######..............#", 0, -9 + 13 * 3, '#80ff80')
+    render_text(screen, "#.............>......#", 0, -9 + 13 * 4, '#80ff80')
+    render_text(screen, "#....................#", 0, -9 + 13 * 5, '#80ff80')
+    render_text(screen, "#......D.............#", 0, -9 + 13 * 6, '#80ff80')
+    render_text(screen, "#....................#", 0, -9 + 13 * 7, '#80ff80')
+    render_text(screen, "#....................#", 0, -9 + 13 * 8, '#80ff80')
+    render_text(screen, "#....................#", 0, -9 + 13 * 9, '#80ff80')
+    render_text(screen, "#....................#", 0, -9 + 13 * 10, '#80ff80')
+    render_text(screen, "#####........@.......#", 0, -9 + 13 * 11, '#80ff80')
+    render_text(screen, "#.C..................#", 0, -9 + 13 * 12, '#80ff80')
+    render_text(screen, "#...#................#", 0, -9 + 13 * 13, '#80ff80')
+    render_text(screen, "######################", 0, -9 + 13 * 14, '#80ff80')
+    render_text(screen, "commander, do you copy?", 0, -9 + 13 * 15, '#ff8080')
+    render_text(screen, "blah blah blah!!!", 0, -9 + 13 * 16, '#8080ff')
 
     WIN.blit(pygame.transform.scale(screen, (WIDTH * 4, HEIGHT * 4)), (0, 0))
 

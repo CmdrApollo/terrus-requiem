@@ -205,8 +205,8 @@ class PyneEngine:
 
     def DrawChar(self, char, c_pair, x, y, scr=None):
         scr = scr if scr else self._scr_buf
-        if 0 <= x     < self._width:
-            if 0 <= y < self._height:
+        if 0 <= x     < scr.width:
+            if 0 <= y < scr.height:
                 try:
                     scr.data[scr.p(x, y)].symbol = char
                     scr.data[scr.p(x, y)].fg     = c_pair[0]
@@ -216,8 +216,8 @@ class PyneEngine:
 
     def SetColor(self, c_pair, x, y, scr=None):
         scr = scr if scr else self._scr_buf
-        if 0 <= x     < self._width:
-            if 0 <= y < self._height:
+        if 0 <= x     < scr.width:
+            if 0 <= y < scr.height:
                 try:
                     scr.data[scr.p(x, y)].fg     = c_pair[0]
                     scr.data[scr.p(x, y)].bg     = c_pair[1]
@@ -227,15 +227,15 @@ class PyneEngine:
     def DrawText(self, text, c_pair, x, y, scr=None):
         scr = scr if scr else self._scr_buf
         for i in range(len(text)):
-            if 0 <= x + i < self._width:
-                if 0 <= y < self._height:
+            if 0 <= x + i < scr.width:
+                if 0 <= y < scr.height:
                     self.DrawChar(text[i], c_pair, x + i, y, scr)
 
     def DrawTextLines(self, lines, c_pair, x, y, right_align = False, scr=None):
         scr = scr if scr else self._scr_buf
         for i in range(len(lines)):
-            if 0 <= x         < self._width:
-                if 0 <= y + 1 < self._height:
+            if 0 <= x         < scr.width:
+                if 0 <= y + 1 < scr.height:
                     self.DrawText(t := lines[i], c_pair, x - len(t) if right_align else x, y + i, scr)
 
     def DrawHLine(self, c_pair, x1, y, x2, char = '─', scr=None):
@@ -273,8 +273,8 @@ class PyneEngine:
 
         for i in range(buffer.width):
             for j in range(buffer.height):
-                if 0 <= i + x <= self.TerminalWidth() - 1:
-                    if 0 <= j + y <= self.TerminalHeight() - 1:
+                if 0 <= i + x <= scr.width - 1:
+                    if 0 <= j + y <= scr.height - 1:
                         c = buffer.data[buffer.p(i, j)]
                         
                         if c:
@@ -332,6 +332,12 @@ class PyneEngine:
         clock = pygame.time.Clock()
         
         if os.path.exists('icon.bmp'):
+            pygame.display.set_icon(pygame.image.load_basic('icon.bmp'))
+        else:
+            f = self._font.render('@', True, self.Color.LIGHT_YELLOW, 'black')
+            s = pygame.Surface((f.get_height(), f.get_height()))
+            s.blit(f, (s.get_width() // 2 - f.get_width() // 2, 0))
+            pygame.image.save(s, 'icon.bmp')
             pygame.display.set_icon(pygame.image.load_basic('icon.bmp'))
 
         while run:

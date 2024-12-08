@@ -1,4 +1,5 @@
 from item import *
+import math
 
 class Player:
     def __init__(self, engine, x, y):
@@ -6,11 +7,6 @@ class Player:
 
         self.x = x
         self.y = y
-
-        self.credits = 1000
-
-        self.homeworld = None
-        self.character_class = None
 
         self.endurance = 5
         self.dexterity = 5
@@ -21,16 +17,23 @@ class Player:
         self.sight_distance = 5 + self.perception
 
         self.melee_weapon = Club()
-        self.ranged_weapon = None
+        self.ranged_weapon = Blaster()
         self.armor = None
 
         self.speed = 100
 
         self.health = self.max_health = 100
 
+        self.energy = self.max_energy = 100
+
+        self.firing = False
+        self.heading = 0
+        self.projx = 0
+        self.projy = 0
+
     def AttemptToDamage(self, name, dmg):
         d = dmg
-        if random.randint(1, 10) <= self.dexterity:
+        if random.randint(1, 10) <= self.dexterity - 1:
             self.engine.AddMessage(f"You dodged the attack from the {name}!")
             return
         self.health = max(0, self.health - d)
@@ -42,7 +45,10 @@ class Player:
             self.engine.OnGameOver()
 
     def ChanceToHitMelee(self):
-        return + (self.perception / 10)
+        return + ((self.perception + 1) / 10)
+
+    def ChanceToHitRanged(self):
+        return + ((self.perception + 1) / 10)
     
     def AttackMelee(self, entity):
         if random.random() <= self.ChanceToHitMelee():
@@ -67,3 +73,32 @@ class Player:
                     entity.Kill()
         else:
             self.engine.AddMessage(f"You missed the {entity.name}.")
+    
+    def AttackRanged(self, entity):
+        if random.random() <= self.ChanceToHitRanged():
+            # hit successful
+
+            self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
+
+            dmg = self.ranged_weapon.roll_damage()
+
+            self.engine.AddMessage(f"You deal {dmg} damage to the {entity.name}!")
+
+            entity.hp -= dmg
+
+            if entity.hp <= 0:
+                self.engine.AddMessage(f"You killed the {entity.name}!")
+
+                entity.Kill()
+        else:
+            self.engine.AddMessage(f"You missed the {entity.name}.")
+
+    def FireWeapon(self, x, y):
+        # check for line of fire between self and point
+        sx = self.x
+        sy = self.y
+        a = math.atan2(y - sy, x - sx)
+
+        self.firing = True
+        self.heading = a
+        self.projx, self.projy = sx, sy

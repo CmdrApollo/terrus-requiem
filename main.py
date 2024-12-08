@@ -5,13 +5,12 @@ from area_map import *
 from ship_chassis import *
 from utils import *
 from dialogue import DialogueManager
-from homeworld import *
 
 import numpy as np
 import tcod.map
 import tcod.constants
 
-GAME_NAME = "Terrus Requiem"
+GAME_NAME = "Terrus Requiem Part I"
 GAME_VERSION = "InDev v0.0.2"
 
 # these screens are static, so they are stored as buffers for simplicity.
@@ -32,16 +31,13 @@ class GameScene:
     MAIN_SHIP = 2
     CAVE = 3
 
-    INVENTORY = 4
-    PLAYER_STATS = 5
-
     HELP = 6
 
 class Actions:
-    # actions that require a direction
     CLOSE_DOOR = 0
+    FIRE_WEAPON = 1
 
-action_times = [ 75 ]
+action_times = [ 75, 50 ]
 
 class TerrusRequiem(PyneEngine):
     # name of the game and title of the window
@@ -58,10 +54,14 @@ class TerrusRequiem(PyneEngine):
         # used for the pseudo-state machine
         self.current_scene = GameScene.MAIN_MENU
 
-        self.main_map = ShipArea("Medbay", self)
+        self.areas = {
+            'medbay': ShipArea("Medbay", self, 0, MAPWIDTH, MAPHEIGHT),
+            'hanger': ShipArea("Hanger", self, 1, MAPWIDTH, MAPHEIGHT),
+            'caves': Cave("Moon Caves", self, 1, MAPWIDTH, MAPHEIGHT)
+        }
 
         # used for collisions and things
-        self.current_map = self.main_map
+        self.current_map = self.areas['caves']
         self.current_overlapping_element = None
 
         # dialogue manager
@@ -90,6 +90,13 @@ class TerrusRequiem(PyneEngine):
         self.creation_screen = 0
 
         self.GenerateSolidsMap()
+
+        self.camx = self.player.x
+        self.camy = self.player.y
+
+        self.targetx = -1
+        self.targety = -1
+        self.targeting = False
 
     def OnGameOver(self):
         pass
@@ -345,7 +352,7 @@ class TerrusRequiem(PyneEngine):
         if attempt_move:
             allow_move = True
 
-            scr_el = self.game_window.GetAt(attempt_move_x, attempt_move_y)
+            scr_el = self.current_map.data.GetAt(attempt_move_x, attempt_move_y)
 
             if not scr_el:
                 # player is attempting to move to an out of bounds position
@@ -358,11 +365,9 @@ class TerrusRequiem(PyneEngine):
                     allow_move = False
                 case _:
                     # otherwise we chill
-                    
-                    if self.current_map:
-                        for e in self.current_map.entities:
-                            if e.solid and e.x == attempt_move_x and e.y == attempt_move_y:
-                                return e
+                    for e in self.current_map.entities:
+                        if e.solid and e.x == attempt_move_x and e.y == attempt_move_y:
+                            return e
 
             if allow_move:
                 self.advance_time = True
@@ -393,7 +398,6 @@ class TerrusRequiem(PyneEngine):
 
     def LoadWorld(self):
         self.current_scene = GameScene.MAIN_SHIP
-        self.current_map = self.main_map
 
         self.player.x = self.current_map.player_start_x
         self.player.y = self.current_map.player_start_y
@@ -401,7 +405,7 @@ class TerrusRequiem(PyneEngine):
     def HandleDirection(self):
         # sets the direction x and y variables based on what key we pressed
         # returns true if no longer waiting for a direction (key has been pressed)
-        if self.waiting_for_direction:
+        if self.waiting_for_direction or self.targeting:
             self.waiting_for_direction = False
 
             if   self.KeyPressed(K_KP8) or self.KeyPressed(K_UP)   : self.direction_x, self.direction_y = + 0, - 1
@@ -433,7 +437,7 @@ class TerrusRequiem(PyneEngine):
             return True
 
         # TODO: update as more game scenes get implemented.
-        if self.current_scene  == GameScene.MAIN_SHIP:
+        if self.current_scene == GameScene.MAIN_SHIP:
             if len(self.messages):
                 # If we pressed any key (basically), remove the first message in the queue
 
@@ -487,10 +491,39 @@ class TerrusRequiem(PyneEngine):
             case GameScene.MAIN_SHIP:
                 self.HandleHelpScreen()
 
+                if self.player.firing:
+                    
+                    self.player.projx += math.cos(self.player.heading) * delta * 10
+                    self.player.projy += math.sin(self.player.heading) * delta * 10
+
+                    if self.current_map.data.GetAt(round(self.player.projx), round(self.player.projy)).symbol == '#':
+                        # abort
+                        self.AddMessage("You fired into the wall!")
+                        self.player.firing = False
+
+                        self.advance_time = True
+                        self.action_time = action_times[Actions.FIRE_WEAPON]
+
+                        return True
+                    
+                    for e in self.current_map.entities:
+                        if e.solid and e.x == round(self.player.projx) and e.y == round(self.player.projy):
+                            e.OnShoot(self, self.player)
+                            
+                            if e.to_remove:
+                                self.current_map.entities.remove(e)
+                            
+                            self.player.firing = False
+                            
+                            self.advance_time = True
+                            self.action_time = action_times[Actions.FIRE_WEAPON]
+
+                    return True
+
                 if self.KeyPressed(K_SPACE):
                     self.player.health = max(0, self.player.health - 10)
 
-                if not self.waiting_for_direction:
+                if not self.waiting_for_direction and not self.targeting:
                     move_interact_entity = self.HandleMoveAndInteract()
                 else:
                     move_interact_entity = None
@@ -528,8 +561,24 @@ class TerrusRequiem(PyneEngine):
                     self.waiting_for_direction = True
                     self.waiting_action = Actions.CLOSE_DOOR
                     self.AddMessage("Close door in what direction?")
+                
+                if cache == 't':
+                    # player is entering/leaving targeting mode
+                    self.targeting = not self.targeting
+                    self.targetx = self.player.x if self.targeting else -1
+                    self.targety = self.player.y if self.targeting else -1
 
-                if move_interact_entity:
+                if self.targeting and has_direction:
+                    self.targetx += self.direction_x
+                    self.targety += self.direction_y
+                
+                if cache == 'f' and self.targeting:
+                    # fire the weapon
+                    self.targeting = False
+                    self.player.FireWeapon(self.targetx, self.targety)
+                    self.targetx = self.targety = -1
+
+                if move_interact_entity and not self.targeting:
                     # if we move into an entity, interact with it and advance time
                     self.advance_time = True
 
@@ -547,23 +596,20 @@ class TerrusRequiem(PyneEngine):
 
                 if self.advance_time:
                     self.AdvanceTime()
+                
+                self.camx = clamp(self.player.x - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
+                self.camy = clamp(self.player.y - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
            
             case GameScene.CAVE:
                 self.HandleHelpScreen()
                 self.HandleMoveAndInteract()
-            
-            case GameScene.INVENTORY:
-                self.HandleHelpScreen()
-            
-            case GameScene.PLAYER_STATS:
-                self.HandleHelpScreen()
 
         return True
     
     def DrawEntities(self):
         # go thru each entity and draw it to the game window
         for e in self.current_map.entities:
-            self.DrawChar(e.repr.symbol, (e.repr.fg, e.repr.bg), e.x, e.y, self.game_window)
+            self.DrawChar(e.repr.symbol, (e.repr.fg, e.repr.bg), e.x - self.camx, e.y - self.camy, self.game_window)
 
     def OnDraw(self):
         show_dialogue = False
@@ -581,7 +627,7 @@ class TerrusRequiem(PyneEngine):
                 for x in range(self.TerminalWidth() - 2):
                     for y in range(self.TerminalHeight() - 2):
                         if self.CharAt(x + 1, y + 1).symbol == " ":
-                            self.DrawChar('.', (random.choice([self.Color.DARK_CYAN, self.Color.VERY_DARK_CYAN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
+                            self.DrawChar('.', (random.choice([self.Color.DARK_CYAN, self.Color.VERY_DARK_CYAN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BACKGROUND), x + 1, y + 1)
                 
                 return True
             
@@ -592,37 +638,35 @@ class TerrusRequiem(PyneEngine):
                 for x in range(self.TerminalWidth() - 2):
                     for y in range(self.TerminalHeight() - 2):
                         if self.CharAt(x + 1, y + 1).symbol == " ":
-                            self.DrawChar('.', (random.choice([self.Color.DARK_MAGENTA, self.Color.VERY_DARK_MAGENTA, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BLACK), x + 1, y + 1)
+                            self.DrawChar('.', (random.choice([self.Color.DARK_MAGENTA, self.Color.VERY_DARK_MAGENTA, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BACKGROUND), x + 1, y + 1)
                 
                 return True
 
             case GameScene.MAIN_SHIP:
-                # blit the planet overworld buffer to the game window
-                # and put the planet name on the bottom of the screen
-                self.BlitBuffer(self.current_map.data, 0, 0, self.game_window)
+                # blit the map data buffer to the game window
+                # and put the map name on the bottom of the screen
+                self.Clear('%', (self.Color.DARK_GRAY, self.Color.BACKGROUND), self.game_window)
+                self.BlitBuffer(self.current_map.data, -self.camx, -self.camy, self.game_window)
                 self.DrawText(f"{self.current_map.name}", (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
+
+                if self.player.firing:
+                    self.DrawChar(self.player.ranged_weapon.proj_char, (self.player.ranged_weapon.proj_color, self.Color.BACKGROUND), round(self.player.projx) - self.camx, round(self.player.projy) - self.camy, self.game_window)
 
                 self.DrawEntities()
             
             case GameScene.CAVE:
                 pass
             
-            case GameScene.INVENTORY:
-                pass
-            
-            case GameScene.PLAYER_STATS:
-                pass
-
             case GameScene.HELP:
                 self.BlitBuffer([help_screen1, help_screen2, help_screen3][self.help_screen], 0, 0)
                 
                 return True
             
-        if self.current_scene not in [GameScene.HELP, GameScene.INVENTORY, GameScene.PLAYER_STATS]:
+        if self.current_scene != GameScene.HELP:
             show_dialogue = True
 
             # draw the '@' for the player
-            self.DrawChar('@', (self.Color.LIGHT_RED, self.Color.BACKGROUND), self.player.x, self.player.y, self.game_window)
+            self.DrawChar('@', (self.Color.LIGHT_YELLOW, self.Color.BACKGROUND), self.player.x - self.camx, self.player.y - self.camy, self.game_window)
 
             if self.current_map:
                 # compute fov
@@ -631,18 +675,18 @@ class TerrusRequiem(PyneEngine):
                 active_visibility = [False for _ in range(len(self.current_map.visibility))]
 
                 # black out or darken cells based on the visibility
-                for x in range(self.game_window.width):
-                    for y in range(self.game_window.height):
-                        if fov[y, x] and self.current_map:
+                for x in range(self.current_map.width):
+                    for y in range(self.current_map.height):
+                        if fov[y, x]:
                             self.current_map.visibility[y * self.current_map.width + x] = True
                             active_visibility[y * self.current_map.width + x] = True
                         
-                        if self.current_map and not self.current_map.visibility[y * self.current_map.width + x]:
-                            self.DrawChar('?', (self.Color.VERY_DARK_GRAY, self.Color.BACKGROUND), x, y, self.game_window)
+                        if not self.current_map.visibility[y * self.current_map.width + x]:
+                            self.DrawChar('?', (self.Color.VERY_DARK_GRAY, self.Color.BACKGROUND), x - self.camx, y - self.camy, self.game_window)
                         
-                        if self.current_map and self.current_map.visibility[y * self.current_map.width + x] and not active_visibility[y * self.current_map.width + x]:
-                            e = self.game_window.GetAt(x, y)
-                            self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x, y, self.game_window)
+                        if self.current_map.visibility[y * self.current_map.width + x] and not active_visibility[y * self.current_map.width + x]:
+                            e = self.current_map.data.GetAt(x, y)
+                            self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x - self.camx, y - self.camy, self.game_window)
 
                 # draw health
                 h = self.player.health / self.player.max_health
@@ -655,6 +699,25 @@ class TerrusRequiem(PyneEngine):
                 for i in range(h):
                     self.SetColor((c, self.Color.BACKGROUND), self.TerminalWidth() - len(s) + 1 + i, self.TerminalHeight() - 3)
                 self.DrawText(t := f"HP: {self.player.health}/{self.player.max_health}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 2)
+
+                # draw energy
+                h = self.player.energy / self.player.max_energy
+                h = int(h * 10)
+                s = f"[{'='*h}{'-'*(10-h)}]"
+                self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(s) // 2, self.TerminalHeight() - 3)
+                for i in range(h):
+                    self.SetColor((self.Color.MAGENTA, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(s) // 2 + 1 + i, self.TerminalHeight() - 3)
+                self.DrawText(t := f"SP: {self.player.energy}/{self.player.max_energy}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, self.TerminalHeight() - 2)
+
+
+                # draw weapons
+                w = "Ml Wp: " + (self.player.melee_weapon.name + " " + str(self.player.melee_weapon.roll) if self.player.melee_weapon else "nul")
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 3)
+                w = "Rg Wp: " + (self.player.ranged_weapon.name + " " + str(self.player.ranged_weapon.roll) if self.player.ranged_weapon else "nul")
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), 0, self.TerminalHeight() - 2)
+
+                # draw armor stats
+                self.DrawText(t := f"PV: {self.player.armor.pv if self.player.armor else 0}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 1)
 
             if len(self.messages):
                 # If we have messages, display the first one
@@ -685,12 +748,8 @@ class TerrusRequiem(PyneEngine):
         if show_dialogue:
             self.dialogue_manager.draw(self)
 
-        if DEBUG:
-            # highlight the mouse pos and show the pos x and y
-            mx, my = self.MousePos()
-
-            self.SetColor((self._scr_buf.GetAt(mx, my).fg, self.Color.WHITE), mx, my)
-            self.DrawTextLines([f"{mx, my}"], (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - 1, 0, True)
+        if self.targetx + 1 and (pygame.time.get_ticks() // 500) % 2:
+            self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, 2 + self.targety - self.camy)
 
         return True
 

@@ -26,6 +26,9 @@ class Entity:
     def PlayerMoveInteract(self, engine, player):
         pass
 
+    def OnShoot(self, player):
+        pass
+
     def OnMyTurn(self, engine):
         pass
 
@@ -89,7 +92,7 @@ class AreaEntrance(Entity):
 # ==============================================================================================================
 
 class BasicEnemy(Entity):
-    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, damage, char, c_pair):
+    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, damage, speed, char, c_pair):
         super().__init__(char, c_pair, x, y)
 
         self.solid = True
@@ -99,13 +102,13 @@ class BasicEnemy(Entity):
 
         self.damage = damage
 
+        self.speed = speed
+
         self.name = name
 
         self.chance_to_dodge = chance_to_dodge
 
         self.is_enemy = True
-
-        self.speed = 175
 
         self.move_interact_time = 100 # time to attack
 
@@ -114,6 +117,9 @@ class BasicEnemy(Entity):
 
     def PlayerMoveInteract(self, engine, player):
         player.AttackMelee(self)
+
+    def OnShoot(self, engine, player):
+        player.AttackRanged(self)
 
     def OnMyTurn(self, engine):
         while self.waited_time >= self.speed:
@@ -173,8 +179,14 @@ class BasicEnemy(Entity):
     
 class Rat(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(15, 15, "Rat", 0.1, x, y, 5, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+        super().__init__(15, 15, "Rat", 0.1, x, y, 5, 120, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
     
 class Chimp(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Chimp", 0.1, x, y, 7, 'c', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+        super().__init__(30, 30, "Chimp", 0.1, x, y, 7, 150, 'c', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+
+# ===============================================================================================
+class ItemPickup(Entity):
+    def __init__(self, item, x, y):
+        super().__init__(item.char, (item.color, PyneEngine.Color.BACKGROUND), x, y)
+        self.item = item

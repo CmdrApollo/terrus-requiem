@@ -16,6 +16,9 @@ Terrus Requiem is a Sci-Fi themed Traditional Roguelike created by Mélanie (Cmd
 - [ ] Stringing together maps
 - [ ] Basic game progression
 - [ ] Proper death/gameloop
+- [ ] Win condition
+- [ ] Some sort of dialogue system to convey story through (potentially ship logs)
+    - [ ] Write and implement basic story
 - [ ] Saving
 
 # Post-MVP Todo-List
@@ -23,3 +26,4 @@ Terrus Requiem is a Sci-Fi themed Traditional Roguelike created by Mélanie (Cmd
 - [ ] More content
 - [ ] Balancing
 - [ ] More animations?
+- [ ] Worldbuilding Worldbuilding Worldbuilding

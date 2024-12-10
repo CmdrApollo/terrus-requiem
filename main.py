@@ -30,8 +30,7 @@ class GameScene:
     MAIN_MENU = 0
     CREDITS = 1
 
-    MAIN_SHIP = 2
-    CAVE = 3
+    PLAYING = 2
 
     HELP = 6
 
@@ -393,7 +392,7 @@ class TerrusRequiem(PyneEngine):
         self.player.y = self.current_map.player_start_y
 
     def LoadWorld(self):
-        self.current_scene = GameScene.MAIN_SHIP
+        self.current_scene = GameScene.PLAYING
 
         self.player.x = self.current_map.player_start_x
         self.player.y = self.current_map.player_start_y
@@ -433,7 +432,7 @@ class TerrusRequiem(PyneEngine):
             return True
 
         # TODO: update as more game scenes get implemented.
-        if self.current_scene == GameScene.MAIN_SHIP:
+        if self.current_scene == GameScene.PLAYING:
             if len(self.messages):
                 # If we pressed any key (basically), remove the first message in the queue
 
@@ -456,7 +455,7 @@ class TerrusRequiem(PyneEngine):
         
         if self.current_scene == GameScene.MAIN_MENU:
             if cache == 'p':
-                self.current_scene = GameScene.MAIN_SHIP
+                self.current_scene = GameScene.PLAYING
             elif cache == 'c':
                 # move to credits scene
                 self.current_scene = GameScene.CREDITS
@@ -484,7 +483,7 @@ class TerrusRequiem(PyneEngine):
 
         # the dreaded switch case
         match self.current_scene:
-            case GameScene.MAIN_SHIP:
+            case GameScene.PLAYING:
                 self.HandleHelpScreen()
 
                 if self.player.firing:
@@ -507,6 +506,8 @@ class TerrusRequiem(PyneEngine):
                             e.OnShoot(self, self.player)
                             
                             if e.to_remove:
+                                if random.random() <= self.player.pickup_chance:
+                                    self.current_map.entities.append(ItemPickup(random.choice(e.drops)(), e.x, e.y))
                                 self.current_map.entities.remove(e)
                             
                             self.player.firing = False
@@ -608,6 +609,9 @@ class TerrusRequiem(PyneEngine):
                     # remove the entity if it has marked itself for removal
                     # (usually upon death)
                     if move_interact_entity.to_remove:
+                        if random.random() <= self.player.pickup_chance and len(move_interact_entity.drops):
+                            self.current_map.entities.append(ItemPickup(random.choice(move_interact_entity.drops)(), move_interact_entity.x, move_interact_entity.y))
+
                         self.current_map.entities.remove(move_interact_entity)
 
                     if type(move_interact_entity) in [Door, Hatch]:
@@ -620,10 +624,6 @@ class TerrusRequiem(PyneEngine):
                 self.camx = clamp(self.player.x - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
                 self.camy = clamp(self.player.y - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
            
-            case GameScene.CAVE:
-                self.HandleHelpScreen()
-                self.HandleMoveAndInteract()
-
         return True
     
     def DrawEntities(self):
@@ -662,7 +662,7 @@ class TerrusRequiem(PyneEngine):
                 
                 return True
 
-            case GameScene.MAIN_SHIP:
+            case GameScene.PLAYING:
                 # blit the map data buffer to the game window
                 # and put the map name on the bottom of the screen
                 self.Clear('%', (self.Color.DARK_GRAY, self.Color.BACKGROUND), self.game_window)
@@ -673,9 +673,6 @@ class TerrusRequiem(PyneEngine):
                     self.DrawChar(self.player.ranged_weapon.proj_char, (self.player.ranged_weapon.proj_color, self.Color.BACKGROUND), round(self.player.projx) - self.camx, round(self.player.projy) - self.camy, self.game_window)
 
                 self.DrawEntities()
-            
-            case GameScene.CAVE:
-                pass
             
             case GameScene.HELP:
                 self.BlitBuffer([help_screen1, help_screen2, help_screen3][self.help_screen], 0, 0)
@@ -729,7 +726,6 @@ class TerrusRequiem(PyneEngine):
                     self.SetColor((self.Color.MAGENTA, self.Color.BACKGROUND), self.TerminalWidth() - len(s) + i, 1)
                 self.DrawText(t := f"SP: {self.player.energy}/{self.player.max_energy}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 2)
 
-
                 # draw weapons
                 w = "Ml Wp: " + (self.player.melee_weapon.name + " " + str(self.player.melee_weapon.roll) if self.player.melee_weapon else "nul")
                 self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 10)
@@ -740,6 +736,11 @@ class TerrusRequiem(PyneEngine):
 
                 # draw armor stats
                 self.DrawText(t := f"PV: {self.player.armor.pv if self.player.armor else 0}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 1)
+
+                # draw inventory
+                for i in range(len(self.player.inventory)):
+                    s = f"{chr(65 + i)}] {self.player.inventory[i].name}"
+                    self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 15 + i)
 
             if len(self.messages):
                 # If we have messages, display the first one
@@ -773,8 +774,11 @@ class TerrusRequiem(PyneEngine):
         self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 8)
         self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 9, panelsize - 1, self.TerminalHeight() - 14)
-        self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 9)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 9, panelsize - 1, 4)
+        self.DrawText('Combat', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 9)
+
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 14, panelsize - 1, self.TerminalHeight() - 19)
+        self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 14)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)

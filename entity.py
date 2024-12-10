@@ -25,6 +25,8 @@ class Entity:
 
         self.waited_time = 0
 
+        self.drops = []
+
     def PlayerMoveInteract(self, engine, player):
         pass
 
@@ -88,7 +90,7 @@ class AreaEntrance(Entity):
 # ==============================================================================================================
 
 class BasicEnemy(Entity):
-    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, damage, speed, char, c_pair):
+    def __init__(self, hp, max_hp, name, chance_to_dodge, x, y, damage, speed, drops, char, c_pair):
         super().__init__(name, char, c_pair, x, y)
 
         self.solid = True
@@ -105,6 +107,8 @@ class BasicEnemy(Entity):
         self.is_enemy = True
 
         self.move_interact_time = 100 # time to attack
+
+        self.drops = drops
 
     def Kill(self):
         self.to_remove = True
@@ -173,11 +177,11 @@ class BasicEnemy(Entity):
     
 class Rat(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(15, 15, "Rat", 0.1, x, y, 5, 120, 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
+        super().__init__(15, 15, "Rat", 0.1, x, y, 5, 120, [RatCorpse], 'r', (PyneEngine.Color.BROWN, PyneEngine.Color.BACKGROUND))
 
 class RockDemon(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Rock Demon", 0.1, x, y, 10, 150, 'R', (PyneEngine.Color.DARK_RED, PyneEngine.Color.BACKGROUND))
+        super().__init__(30, 30, "Rock Demon", 0.1, x, y, 10, 150, [Rock], 'R', (PyneEngine.Color.DARK_RED, PyneEngine.Color.BACKGROUND))
 
 # ===============================================================================================
 class ItemPickup(Entity):

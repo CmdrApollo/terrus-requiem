@@ -12,7 +12,7 @@ class Player:
         self.endurance = 5
         self.dexterity = 5
         self.intelligence = 5
-        self.perception = 5
+        self.perception = 9
         self.strength = 5
 
         self.sight_distance = 5 + self.perception
@@ -35,6 +35,8 @@ class Player:
         self.inventory = []
 
         self.capacity = 20
+
+        self.pickup_chance = 0.5
 
     def CanPickupItem(self):
         return len(self.inventory) < self.capacity

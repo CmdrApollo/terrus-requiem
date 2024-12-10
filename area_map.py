@@ -8,7 +8,7 @@ import tcod.random
 map_width = terminal_width
 map_height = terminal_height - 5
 
-RANDOM_ITEM_CHANCE = 0.001
+RANDOM_ITEM_CHANCE = 0.0025
 
 class Map:
     def __init__(self, name, engine, x, y, w=map_width, h=map_height):
@@ -103,7 +103,11 @@ class Cave(Map):
     
     def generate(self):
         monsters = [Rat, RockDemon]
-        items = [Club, LightArmor]
+        items = [
+            Club, BasicSpear, AdvancedSpear,
+            BasicBlaster, AdvancedBlaster,
+            LightArmor, MediumArmor, HeavyArmor
+        ]
 
         self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
 

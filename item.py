@@ -7,6 +7,10 @@ class ItemClass:
 
     ARMOR = 2
 
+    CORPSE = 3
+
+    MISC = 4
+
 class MeleeWeaponType:
     BLUNT = 0
     SHARP = 1
@@ -32,15 +36,15 @@ class MeleeWeapon(Item):
     
 class Club(MeleeWeapon):
     def __init__(self):
-        super().__init__("Club", MeleeWeaponType.BLUNT, Roll(2, 4, 2), '*', PyneEngine.Color.ORANGE) # 2d4+2 blunt
+        super().__init__("Club", MeleeWeaponType.BLUNT, Roll(2, 4, 2), '/', PyneEngine.Color.BROWN) # 2d4+2 blunt
     
 class BasicSpear(MeleeWeapon):
     def __init__(self):
-        super().__init__("Bsc. Spear", MeleeWeaponType.SHARP, Roll(1, 6, 4), '*', PyneEngine.Color.BROWN) # 1d6+4 sharp
+        super().__init__("Bsc. Spear", MeleeWeaponType.SHARP, Roll(1, 6, 4), '/', PyneEngine.Color.GRAY) # 1d6+4 sharp
     
 class AdvancedSpear(MeleeWeapon):
     def __init__(self):
-        super().__init__("Adv. Spear", MeleeWeaponType.SHARP, Roll(2, 6, 4), '*', PyneEngine.Color.BROWN) # 1d6+4 sharp
+        super().__init__("Adv. Spear", MeleeWeaponType.SHARP, Roll(2, 6, 4), '/', PyneEngine.Color.WHITE) # 1d6+4 sharp
 
 class RangedWeapon(Item):
     def __init__(self, name: str, proj_char: str, proj_color: str, weapon_type: int, roll: Roll, char: str, color: str):
@@ -56,11 +60,11 @@ class RangedWeapon(Item):
 
 class BasicBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), '(', PyneEngine.Color.GRAY) # 1d6+2
+        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), '[', PyneEngine.Color.GRAY) # 1d6+2
 
 class AdvancedBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Adv. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '(', PyneEngine.Color.WHITE) # 2d6+2
+        super().__init__("Adv. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '[', PyneEngine.Color.WHITE) # 2d6+2
 
 class Armor(Item):
     def __init__(self, name: str, pv: int, char: str, color: str):
@@ -88,3 +92,15 @@ class MediumArmor(Armor):
 class HeavyArmor(Armor):
     def __init__(self):
         super().__init__("Heavy Armor", 10, '%', PyneEngine.Color.WHITE)
+
+class Corpse(Item):
+    def __init__(self, name, color):
+        super().__init__(name, ItemClass.CORPSE, '%', color)
+
+class RatCorpse(Corpse):
+    def __init__(self):
+        super().__init__("Rat Corpse", PyneEngine.Color.BROWN)
+
+class Rock(Item):
+    def __init__(self):
+        super().__init__("Rock", ItemClass.MISC, 'o', PyneEngine.Color.GRAY)

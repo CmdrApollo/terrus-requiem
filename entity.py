@@ -3,6 +3,7 @@ import tcod.path
 import numpy as np
 from item import *
 from copy import copy
+from utils import *
 
 class Entity:
     def __init__(self, name, char, c_pair, x, y):
@@ -28,6 +29,9 @@ class Entity:
         self.drops = []
 
     def PlayerMoveInteract(self, engine, player):
+        pass
+
+    def PlayerKeyInteract(self, engine, player, key):
         pass
 
     def OnShoot(self, player):
@@ -81,11 +85,16 @@ class Hatch(Door):
         self.name = "Hatch"
 
 class AreaEntrance(Entity):
-    def __init__(self, x, y):
+    def __init__(self, area, x, y):
         super().__init__("Entrance", ">", (PyneEngine.Color.WHITE, PyneEngine.Color.BACKGROUND), x, y)
+        self.area = area
 
     def PlayerMoveInteract(self, engine, player):
         pass
+
+    def PlayerKeyInteract(self, engine, player, key):
+        if key == '>':
+            engine.LoadMap(self.area)
 
 # ==============================================================================================================
 
@@ -181,10 +190,24 @@ class Rat(BasicEnemy):
 
 class RockDemon(BasicEnemy):
     def __init__(self, x, y):
-        super().__init__(30, 30, "Rock Demon", 0.1, x, y, 10, 150, [Rock], 'R', (PyneEngine.Color.DARK_RED, PyneEngine.Color.BACKGROUND))
+        super().__init__(30, 30, "Rock Demon", 0.1, x, y, 10, 150, [Rock], 'R', (PyneEngine.Color.GRAY, PyneEngine.Color.BACKGROUND))
 
 # ===============================================================================================
 class ItemPickup(Entity):
     def __init__(self, item, x, y):
         super().__init__(item.name, item.char, (item.color, PyneEngine.Color.BACKGROUND), x, y)
         self.item = item
+    
+    def PlayerKeyInteract(self, engine, player, key):
+        if key == 'p':
+            if player.CanPickupItem():
+                player.GiveItem(self.item)
+                engine.AddMessage(f"Picked up the {self.item.name}.", PyneEngine.Color.LIGHT_GREEN)
+                
+                self.to_remove = True
+                engine.current_map.entities.remove(self)
+
+                engine.advance_time = True
+                engine.action_time = action_times[Actions.PICKUP]
+            else:
+                engine.AddMessage("Insufficient space.", PyneEngine.Color.LIGHT_YELLOW)

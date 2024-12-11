@@ -11,4 +11,4 @@ class Roll:
         return sum([random.randint(1, self.y) for _ in range(self.x)]) + self.z
     
     def __repr__(self):
-        return f"({self.x}d{self.y} + {self.z})"
+        return f"({self.x}d{self.y}+{self.z})"

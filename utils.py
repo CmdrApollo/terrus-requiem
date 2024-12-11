@@ -1,9 +1,5 @@
 import random
 from pyne.pyne import *
-from entity import *
-
-terminal_width, terminal_height = 90, 40
-MAPWIDTH, MAPHEIGHT = 200, 80
 
 class Actions:
     CLOSE_DOOR = 0
@@ -12,6 +8,11 @@ class Actions:
     PICKUP = 3
 
 action_times = [ 75, 100, 50, 100 ]
+
+from entity import *
+
+terminal_width, terminal_height = 88, 36
+MAPWIDTH, MAPHEIGHT = 200, 80
 
 def string_to_seed(string):
     return int(sum([ord(string[i]) for i in range(len(string))]))

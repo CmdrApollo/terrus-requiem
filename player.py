@@ -34,7 +34,7 @@ class Player:
 
         self.inventory = []
 
-        self.capacity = 20
+        self.capacity = 10
 
         self.pickup_chance = 0.5
 
@@ -55,13 +55,13 @@ class Player:
             self.engine.AddMessage(f"Your armor protected you from the {name}!")
         else:
             self.health = max(0, self.health - d)
-            self.engine.AddMessage(f"The {name} hit you for {d} damage!")
+            self.engine.AddMessage(f"The {name} hit you for {d} damage!", PyneEngine.Color.LIGHT_RED)
             if self.armor:
-                self.engine.AddMessage(f"Your armor ablated!")
+                self.engine.AddMessage(f"Your armor ablated!", PyneEngine.Color.LIGHT_RED)
                 if self.armor.destroyed:
-                    self.engine.AddMessage(f"Your armor was destroyed!")
+                    self.engine.AddMessage(f"Your armor was destroyed!", PyneEngine.Color.LIGHT_RED)
             if self.health == 0:
-                self.engine.AddMessage(f"You died!")
+                self.engine.AddMessage(f"You died!", PyneEngine.Color.LIGHT_RED)
 
                 # TODO write this function...
                 self.engine.OnGameOver()

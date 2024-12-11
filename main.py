@@ -42,18 +42,18 @@ class TerrusRequiem(PyneEngine):
         super().__init__(terminal_width, terminal_height, target_size)
 
         # where most things get rendered besides the 5 lines of text
-        self.game_window = self.Buffer(self.TerminalWidth() - panelsize, self.TerminalHeight() - 4)
+        self.game_window = self.Buffer(self.TerminalWidth() - panelsize, self.TerminalHeight())
     
         self.player = Player(self, self.game_window.width // 2, self.game_window.height // 2)
 
         # used for the pseudo-state machine
         self.current_scene = GameScene.MAIN_MENU
 
-        self.areas = {
-            'medbay': ShipArea("Medbay", self, 0, MAPWIDTH, MAPHEIGHT),
-            'hanger': ShipArea("Hanger", self, 1, MAPWIDTH, MAPHEIGHT),
-            'caves': Cave("Moon Caves", self, 1, MAPWIDTH, MAPHEIGHT)
-        }
+        self.areas = {}
+
+        self.areas.update({'medbay': ShipArea("Medbay", self, 0, MAPWIDTH, MAPHEIGHT)})
+        self.areas.update({'hanger': ShipArea("Hanger", self, 1, MAPWIDTH, MAPHEIGHT)})
+        self.areas.update({'caves': Cave("Moon Caves", self, 1, MAPWIDTH, MAPHEIGHT)})
 
         # used for collisions and things
         self.current_map = self.areas['caves']
@@ -62,8 +62,8 @@ class TerrusRequiem(PyneEngine):
         # dialogue manager
         self.dialogue_manager = DialogueManager()
 
-        # the two lines at the top of the screen
         self.messages = []
+        self.message_colors = []
 
         self.renaming_base = False
 
@@ -97,8 +97,27 @@ class TerrusRequiem(PyneEngine):
         pass
 
     # add messages to the queue
-    def AddMessage(self, message):
-        self.messages.append(message)
+    def AddMessage(self, msg, color=PyneEngine.Color.WHITE):
+        # split a line that's too long into two lines
+        if len(msg) >= panelsize - 2:
+            lines = ['']
+            size = 0
+
+            for el in msg.split(' '):
+                lines[-1] += el + ' '
+
+                size += len(el) + 1
+
+                if size > panelsize - 7:
+                    lines.append('')
+                    size = 0
+        else:
+            lines = [msg]
+        self.messages += lines
+        self.message_colors += [color] * len(lines)
+        while len(self.messages) > 7:
+            self.messages.pop(0)
+            self.message_colors.pop(0)
 
     def RenderBook(self, title, text, scr=None):
         self.DrawText(t := title, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), 0, scr)
@@ -384,9 +403,12 @@ class TerrusRequiem(PyneEngine):
 
         self.advance_time = False
 
-    def LoadMap(self, area, is_base=False):
+    def LoadMap(self, area):
         self.current_map = area
-        self.current_scene = GameScene.PLANET_AREA if not is_base else GameScene.PLAYER_BASE
+        self.current_scene = GameScene.PLAYING
+        self.current_map.visibility = [False for _ in range(self.current_map.width * self.current_map.height)]
+
+        self.GenerateSolidsMap()
         
         self.player.x = self.current_map.player_start_x
         self.player.y = self.current_map.player_start_y
@@ -430,20 +452,6 @@ class TerrusRequiem(PyneEngine):
             # the first line of text gets skipped entirely
             self.first_frame = False
             return True
-
-        # TODO: update as more game scenes get implemented.
-        if self.current_scene == GameScene.PLAYING:
-            if len(self.messages):
-                # If we pressed any key (basically), remove the first message in the queue
-
-                if self.HasTextCache() or any([self.KeyPressed(x) for x in [K_UP, K_DOWN, K_LEFT, K_RIGHT, K_KP1, K_KP2, K_KP3, K_KP4, K_KP6, K_KP7, K_KP8, K_KP9]]):
-                    self.messages.pop(0)
-                
-                # Quit-out early. this is a choke point for the program
-                # the user cannot do anything until they drain the message queue
-                
-                if len(self.messages) > 0:
-                    return True
 
         # stores what unicode character has been pressed
         # obeys modifiers
@@ -517,9 +525,6 @@ class TerrusRequiem(PyneEngine):
 
                     return True
 
-                if self.KeyPressed(K_SPACE):
-                    self.player.health = max(0, self.player.health - 10)
-
                 if not self.waiting_for_direction and not (self.targeting or self.questioning):
                     move_interact_entity = self.HandleMoveAndInteract()
                 else:
@@ -553,28 +558,17 @@ class TerrusRequiem(PyneEngine):
                     self.waiting_action = None
                     self.waiting_for_direction = False
 
+
+                for e in self.current_map.entities:
+                    if e.x == self.player.x and e.y == self.player.y:
+                        e.PlayerKeyInteract(self, self.player, cache)
+
                 if cache == 'c':
                     # player is attempting to close a door
                     self.waiting_for_direction = True
                     self.waiting_action = Actions.CLOSE_DOOR
                     self.AddMessage("Close door in what direction?")
 
-                if cache == 'p':
-                    # player is attempting to pick up an item
-                    self.advance_time = True
-                    self.action_time = action_times[Actions.PICKUP]
-
-                    for e in self.current_map.entities:
-                        if e.x == self.player.x and e.y == self.player.y:
-                            if type(e) == ItemPickup:
-                                if self.player.CanPickupItem():
-                                    self.player.GiveItem(e.item)
-                                    self.AddMessage(f"Picked up the {e.item.name}.")
-                                    e.to_remove = True
-                                    self.current_map.entities.remove(e)
-                                else:
-                                    self.AddMessage("Insufficient space.")
-                
                 if cache == 't':
                     # player is entering/leaving targeting mode
                     self.questioning = False
@@ -613,6 +607,9 @@ class TerrusRequiem(PyneEngine):
                             self.current_map.entities.append(ItemPickup(random.choice(move_interact_entity.drops)(), move_interact_entity.x, move_interact_entity.y))
 
                         self.current_map.entities.remove(move_interact_entity)
+                        
+                        # if we remove an entity, regenerate the solids map
+                        self.GenerateSolidsMap()
 
                     if type(move_interact_entity) in [Door, Hatch]:
                         # If we open a door, regenerate the solids map
@@ -742,34 +739,20 @@ class TerrusRequiem(PyneEngine):
                     s = f"{chr(65 + i)}] {self.player.inventory[i].name}"
                     self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 15 + i)
 
+            # draw log
             if len(self.messages):
-                # If we have messages, display the first one
-                msg = self.messages[0] + (' (more)' if len(self.messages) != 1 else '')
-
-                # split a line that's too long into two lines
-                if len(msg) > self.TerminalWidth() - 1:
-                    lines = ['']
-                    size = 0
-
-                    for el in msg.split(' '):
-                        lines[-1] += el + ' '
-
-                        size += len(el) + 1
-
-                        if size > self.TerminalWidth() - 5:
-                            lines.append('')
-                            size = 0
-                else:
-                    lines = [msg]
-
-                # draw the text
-                self.DrawTextLines(lines[:2], (self.Color.WHITE, self.Color.BACKGROUND), 1, self.TerminalHeight() - 3)
+                y = self.TerminalHeight() - 8
+                for m, msg in enumerate(self.messages):
+                    # draw the text
+                    self.DrawText(msg, (self.message_colors[m], self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, y)
+                    y += 1
 
         # put the game window onto the main screen
         self.BlitBuffer(self.game_window, 0, 0)
 
         # draw panels
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 4, self.TerminalWidth() - 1, 3)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 9, panelsize - 1, 8)
+        self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 9)
 
         self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 8)
         self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
@@ -777,7 +760,7 @@ class TerrusRequiem(PyneEngine):
         self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 9, panelsize - 1, 4)
         self.DrawText('Combat', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 9)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 14, panelsize - 1, self.TerminalHeight() - 19)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 14, panelsize - 1, self.TerminalHeight() - 24)
         self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 14)
 
         if show_dialogue:

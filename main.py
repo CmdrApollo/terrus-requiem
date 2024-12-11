@@ -77,6 +77,7 @@ class TerrusRequiem(PyneEngine):
 
         # if the program should wait for a direction and what action it's waiting for
         self.waiting_for_direction = False
+        self.waiting_for_input = False
         self.waiting_action = None
 
         self.prev_scene = None
@@ -115,7 +116,7 @@ class TerrusRequiem(PyneEngine):
             lines = [msg]
         self.messages += lines
         self.message_colors += [color] * len(lines)
-        while len(self.messages) > 7:
+        while len(self.messages) > 10:
             self.messages.pop(0)
             self.message_colors.pop(0)
 
@@ -525,7 +526,7 @@ class TerrusRequiem(PyneEngine):
 
                     return True
 
-                if not self.waiting_for_direction and not (self.targeting or self.questioning):
+                if not self.waiting_for_direction and not self.waiting_for_input and not (self.targeting or self.questioning):
                     move_interact_entity = self.HandleMoveAndInteract()
                 else:
                     move_interact_entity = None
@@ -557,69 +558,116 @@ class TerrusRequiem(PyneEngine):
                     # reset
                     self.waiting_action = None
                     self.waiting_for_direction = False
-
-
-                for e in self.current_map.entities:
-                    if e.x == self.player.x and e.y == self.player.y:
-                        e.PlayerKeyInteract(self, self.player, cache)
-
-                if cache == 'c':
-                    # player is attempting to close a door
-                    self.waiting_for_direction = True
-                    self.waiting_action = Actions.CLOSE_DOOR
-                    self.AddMessage("Close door in what direction?")
-
-                if cache == 't':
-                    # player is entering/leaving targeting mode
-                    self.questioning = False
-                    self.targeting = not self.targeting
-                    self.targetx = self.player.x if self.targeting else -1
-                    self.targety = self.player.y if self.targeting else -1
-
-                if cache == '?':
-                    # player is entering/leaving questioning mode
-                    self.targeting = False
-                    self.questioning = not self.questioning
-                    self.targetx = self.player.x if self.questioning else -1
-                    self.targety = self.player.y if self.questioning else -1
-
-                if (self.targeting or self.questioning) and has_direction:
-                    self.targetx += self.direction_x
-                    self.targety += self.direction_y
                 
-                if cache == 'f' and self.targeting:
-                    # fire the weapon
-                    self.targeting = False
-                    self.player.FireWeapon(self.targetx, self.targety)
-                    self.targetx = self.targety = -1
+                if self.waiting_for_input:
+                    match self.waiting_action:
+                        case Actions.EQUIP:
+                            if cache:
+                                i = ord(cache.upper()) - 65
+                                if 0 <= i < len(self.player.inventory):
+                                    item = self.player.inventory[i]
+                                    if issubclass(type(item), MeleeWeapon):
+                                        self.player.inventory.insert(i, self.player.melee_weapon)
+                                        self.player.melee_weapon = item
+                                        self.player.inventory.remove(item)
 
-                if move_interact_entity and not (self.targeting or self.questioning):
-                    # if we move into an entity, interact with it and advance time
-                    self.advance_time = True
+                                        self.AddMessage(f"Equiped {item.name}!")
 
-                    move_interact_entity.PlayerMoveInteract(self, self.player)
-                    self.action_time = move_interact_entity.move_interact_time
+                                        self.advance_time = True
+                                        self.action_time = action_times[Actions.EQUIP]
+                                    elif issubclass(type(item), RangedWeapon):
+                                        self.player.inventory.insert(i, self.player.ranged_weapon)
+                                        self.player.ranged_weapon = item
+                                        self.player.inventory.remove(item)
 
-                    # remove the entity if it has marked itself for removal
-                    # (usually upon death)
-                    if move_interact_entity.to_remove:
-                        if random.random() <= self.player.pickup_chance and len(move_interact_entity.drops):
-                            self.current_map.entities.append(ItemPickup(random.choice(move_interact_entity.drops)(), move_interact_entity.x, move_interact_entity.y))
+                                        self.AddMessage(f"Equiped {item.name}!")
 
-                        self.current_map.entities.remove(move_interact_entity)
-                        
-                        # if we remove an entity, regenerate the solids map
-                        self.GenerateSolidsMap()
+                                        self.advance_time = True
+                                        self.action_time = action_times[Actions.EQUIP]
+                                    elif issubclass(type(item), Armor):
+                                        self.player.inventory.insert(i, self.player.armor)
+                                        self.player.armor = item
+                                        self.player.inventory.remove(item)
 
-                    if type(move_interact_entity) in [Door, Hatch]:
-                        # If we open a door, regenerate the solids map
-                        self.GenerateSolidsMap()
+                                        self.AddMessage(f"Equiped {item.name}!")
 
-                if self.advance_time:
-                    self.AdvanceTime()
-                
-                self.camx = clamp(self.player.x - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
-                self.camy = clamp(self.player.y - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
+                                        self.advance_time = True
+                                        self.action_time = action_times[Actions.EQUIP]
+                                    else:
+                                        self.AddMessage("Item is unequipable.", PyneEngine.Color.LIGHT_YELLOW)
+                                else:
+                                    self.AddMessage("Invalid input!", PyneEngine.Color.LIGHT_YELLOW)
+
+                                # reset
+                                self.waiting_action = None
+                                self.waiting_for_input = False
+                else:
+                    for e in self.current_map.entities:
+                        if e.x == self.player.x and e.y == self.player.y:
+                            e.PlayerKeyInteract(self, self.player, cache)
+
+                    if cache == 'e':
+                        self.waiting_for_input = True
+                        self.waiting_action = Actions.EQUIP
+                        self.AddMessage("Equip what?")
+
+                    if cache == 'c':
+                        # player is attempting to close a door
+                        self.waiting_for_direction = True
+                        self.waiting_action = Actions.CLOSE_DOOR
+                        self.AddMessage("Close door in what direction?")
+
+                    if cache == 't':
+                        # player is entering/leaving targeting mode
+                        self.questioning = False
+                        self.targeting = not self.targeting
+                        self.targetx = self.player.x if self.targeting else -1
+                        self.targety = self.player.y if self.targeting else -1
+
+                    if cache == '?':
+                        # player is entering/leaving questioning mode
+                        self.targeting = False
+                        self.questioning = not self.questioning
+                        self.targetx = self.player.x if self.questioning else -1
+                        self.targety = self.player.y if self.questioning else -1
+
+                    if (self.targeting or self.questioning) and has_direction:
+                        self.targetx += self.direction_x
+                        self.targety += self.direction_y
+                    
+                    if cache == 'f' and self.targeting:
+                        # fire the weapon
+                        self.targeting = False
+                        self.player.FireWeapon(self.targetx, self.targety)
+                        self.targetx = self.targety = -1
+
+                    if move_interact_entity and not (self.targeting or self.questioning):
+                        # if we move into an entity, interact with it and advance time
+                        self.advance_time = True
+
+                        move_interact_entity.PlayerMoveInteract(self, self.player)
+                        self.action_time = move_interact_entity.move_interact_time
+
+                        # remove the entity if it has marked itself for removal
+                        # (usually upon death)
+                        if move_interact_entity.to_remove:
+                            if random.random() <= self.player.pickup_chance and len(move_interact_entity.drops):
+                                self.current_map.entities.append(ItemPickup(random.choice(move_interact_entity.drops)(), move_interact_entity.x, move_interact_entity.y))
+
+                            self.current_map.entities.remove(move_interact_entity)
+                            
+                            # if we remove an entity, regenerate the solids map
+                            self.GenerateSolidsMap()
+
+                        if type(move_interact_entity) in [Door, Hatch]:
+                            # If we open a door, regenerate the solids map
+                            self.GenerateSolidsMap()
+
+                    if self.advance_time:
+                        self.AdvanceTime()
+                    
+                    self.camx = clamp(self.player.x - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
+                    self.camy = clamp(self.player.y - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
            
         return True
     
@@ -664,7 +712,6 @@ class TerrusRequiem(PyneEngine):
                 # and put the map name on the bottom of the screen
                 self.Clear('%', (self.Color.DARK_GRAY, self.Color.BACKGROUND), self.game_window)
                 self.BlitBuffer(self.current_map.data, -self.camx, -self.camy, self.game_window)
-                self.DrawText(f"{self.current_map.name}", (self.Color.WHITE, self.Color.BACKGROUND), 0, self.TerminalHeight() - 1)
 
                 if self.player.firing:
                     self.DrawChar(self.player.ranged_weapon.proj_char, (self.player.ranged_weapon.proj_color, self.Color.BACKGROUND), round(self.player.projx) - self.camx, round(self.player.projy) - self.camy, self.game_window)
@@ -702,6 +749,9 @@ class TerrusRequiem(PyneEngine):
                             e = self.current_map.data.GetAt(x, y)
                             self.DrawChar(e.symbol, (self.DarkenColor(e.fg), self.DarkenColor(e.bg)), x - self.camx, y - self.camy, self.game_window)
 
+                # draw area name
+                self.DrawText(t := self.current_map.name, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 4)
+
                 # draw health
                 h = self.player.health / self.player.max_health
                 h = int(h * 10)
@@ -725,23 +775,20 @@ class TerrusRequiem(PyneEngine):
 
                 # draw weapons
                 w = "Ml Wp: " + (self.player.melee_weapon.name + " " + str(self.player.melee_weapon.roll) if self.player.melee_weapon else "nul")
-                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 10)
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 7)
                 w = "Rg Wp: " + (self.player.ranged_weapon.name + " " + str(self.player.ranged_weapon.roll) if self.player.ranged_weapon else "nul")
-                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 11)
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 8)
                 w = "Armor: " + (self.player.armor.name + " (" + str(self.player.armor.pv) + "PV)" if self.player.armor else "nul")
-                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 12)
-
-                # draw armor stats
-                self.DrawText(t := f"PV: {self.player.armor.pv if self.player.armor else 0}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t), self.TerminalHeight() - 1)
+                self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 9)
 
                 # draw inventory
                 for i in range(len(self.player.inventory)):
                     s = f"{chr(65 + i)}] {self.player.inventory[i].name}"
-                    self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 15 + i)
+                    self.DrawText(s, (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 12 + i)
 
             # draw log
             if len(self.messages):
-                y = self.TerminalHeight() - 8
+                y = self.TerminalHeight() - 11
                 for m, msg in enumerate(self.messages):
                     # draw the text
                     self.DrawText(msg, (self.message_colors[m], self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, y)
@@ -751,18 +798,18 @@ class TerrusRequiem(PyneEngine):
         self.BlitBuffer(self.game_window, 0, 0)
 
         # draw panels
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 8)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 5)
         self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 9, panelsize - 1, 4)
-        self.DrawText('Combat', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 9)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 6, panelsize - 1, 4)
+        self.DrawText('Combat', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 6)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 14, panelsize - 1, self.TerminalHeight() - 24)
-        self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 14)
-        self.DrawText(t := f"{len(self.player.inventory)}/{self.player.capacity}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 14)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 11, panelsize - 1, self.TerminalHeight() - 24)
+        self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 11)
+        self.DrawText(t := f"{len(self.player.inventory)}/{self.player.capacity}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 11)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 9, panelsize - 1, 8)
-        self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 9)
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 12, panelsize - 1, 11)
+        self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 12)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)

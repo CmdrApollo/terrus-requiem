@@ -49,14 +49,16 @@ class Player:
         if random.randint(1, 10) <= self.dexterity - 1:
             self.engine.AddMessage(f"You dodged the attack from the {name}!")
             return
+        armor_was_destroyed = False
         if self.armor:
+            armor_was_destroyed = self.armor.destroyed
             d = self.armor.FilterDamage(d)
         if d == 0:
             self.engine.AddMessage(f"Your armor protected you from the {name}!")
         else:
             self.health = max(0, self.health - d)
             self.engine.AddMessage(f"The {name} hit you for {d} damage!", PyneEngine.Color.LIGHT_RED)
-            if self.armor:
+            if self.armor and not armor_was_destroyed:
                 self.engine.AddMessage(f"Your armor ablated!", PyneEngine.Color.LIGHT_RED)
                 if self.armor.destroyed:
                     self.engine.AddMessage(f"Your armor was destroyed!", PyneEngine.Color.LIGHT_RED)

@@ -5,7 +5,7 @@ from .utils import *
 map_width = terminal_width
 map_height = terminal_height - 5
 
-RANDOM_ITEM_CHANCE = 0.025
+RANDOM_ITEM_CHANCE = 0.0025
 
 class Map:
     def __init__(self, name, engine, x, y, w=map_width, h=map_height):

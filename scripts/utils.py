@@ -6,12 +6,13 @@ class Actions:
     MELEE_ATTACK = 1
     RANGED_ATTACK = 2
     PICKUP = 3
+    EQUIP = 4
 
-action_times = [ 75, 100, 50, 100 ]
+action_times = [ 75, 100, 50, 125, 150 ]
 
 from .entity import *
 
-terminal_width, terminal_height = 88, 36
+terminal_width, terminal_height = 88, 35
 MAPWIDTH, MAPHEIGHT = 200, 80
 
 def string_to_seed(string):

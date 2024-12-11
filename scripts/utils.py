@@ -7,10 +7,10 @@ class Actions:
     RANGED_ATTACK = 2
     PICKUP = 3
     EQUIP = 4
+    UNEQUIP = 5
+    DROP = 6
 
-action_times = [ 75, 100, 50, 125, 150 ]
-
-from .entity import *
+action_times = [ 75, 100, 50, 125, 150, 140, 50 ]
 
 terminal_width, terminal_height = 88, 35
 MAPWIDTH, MAPHEIGHT = 200, 80
@@ -69,7 +69,9 @@ def crop(buffer, engine):
 def clamp(x, minv, maxv):
     return min(max(minv, x), maxv)
 
+from .entity import *
 class BufferWithEntities(PyneEngine.Buffer):
+
     def __init__(self, width: int, height: int):
         super().__init__(width, height)
 

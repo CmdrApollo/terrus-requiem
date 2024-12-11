@@ -567,7 +567,8 @@ class TerrusRequiem(PyneEngine):
                                 if 0 <= i < len(self.player.inventory):
                                     item = self.player.inventory[i]
                                     if issubclass(type(item), MeleeWeapon):
-                                        self.player.inventory.insert(i, self.player.melee_weapon)
+                                        if self.player.melee_weapon:
+                                            self.player.inventory.insert(i, self.player.melee_weapon)
                                         self.player.melee_weapon = item
                                         self.player.inventory.remove(item)
 
@@ -576,7 +577,8 @@ class TerrusRequiem(PyneEngine):
                                         self.advance_time = True
                                         self.action_time = action_times[Actions.EQUIP]
                                     elif issubclass(type(item), RangedWeapon):
-                                        self.player.inventory.insert(i, self.player.ranged_weapon)
+                                        if self.player.ranged_weapon:
+                                            self.player.inventory.insert(i, self.player.ranged_weapon)
                                         self.player.ranged_weapon = item
                                         self.player.inventory.remove(item)
 
@@ -585,7 +587,8 @@ class TerrusRequiem(PyneEngine):
                                         self.advance_time = True
                                         self.action_time = action_times[Actions.EQUIP]
                                     elif issubclass(type(item), Armor):
-                                        self.player.inventory.insert(i, self.player.armor)
+                                        if self.player.armor:
+                                            self.player.inventory.insert(i, self.player.armor)
                                         self.player.armor = item
                                         self.player.inventory.remove(item)
 
@@ -601,6 +604,44 @@ class TerrusRequiem(PyneEngine):
                                 # reset
                                 self.waiting_action = None
                                 self.waiting_for_input = False
+                        case Actions.UNEQUIP:
+                            if cache:
+                                if self.player.CanPickupItem():
+                                    if cache == 'm' and self.player.melee_weapon:
+                                        # melee weapon
+                                        self.player.GiveItem(self.player.melee_weapon)
+                                        self.AddMessage(f"Unequipped {self.player.melee_weapon.name}!")
+
+                                        self.player.melee_weapon = None
+
+                                        self.advance_time = True
+                                        self.action_time = action_times[Actions.UNEQUIP]
+                                    elif cache == 'r' and self.player.ranged_weapon:
+                                        # ranged weapon
+                                        self.player.GiveItem(self.player.ranged_weapon)
+                                        self.AddMessage(f"Unequipped {self.player.ranged_weapon.name}!")
+
+                                        self.player.ranged_weapon = None
+
+                                        self.advance_time = True
+                                        self.action_time = action_times[Actions.UNEQUIP]
+                                    elif cache == 'a' and self.player.armor:
+                                        # armor
+                                        self.player.GiveItem(self.player.armor)
+                                        self.AddMessage(f"Unequipped {self.player.armor.name}!")
+
+                                        self.player.armor = None
+
+                                        self.advance_time = True
+                                        self.action_time = action_times[Actions.UNEQUIP]
+                                    else:
+                                        self.AddMessage("Invalid input!", PyneEngine.Color.LIGHT_YELLOW)
+                                else:
+                                    self.AddMessage("Can't unequip. Drop something to free up space.", PyneEngine.Color.LIGHT_YELLOW)
+
+                                # reset
+                                self.waiting_action = None
+                                self.waiting_for_input = False
                 else:
                     for e in self.current_map.entities:
                         if e.x == self.player.x and e.y == self.player.y:
@@ -610,6 +651,11 @@ class TerrusRequiem(PyneEngine):
                         self.waiting_for_input = True
                         self.waiting_action = Actions.EQUIP
                         self.AddMessage("Equip what?")
+
+                    if cache == 'u':
+                        self.waiting_for_input = True
+                        self.waiting_action = Actions.UNEQUIP
+                        self.AddMessage("Unequip what?")
 
                     if cache == 'c':
                         # player is attempting to close a door

@@ -572,7 +572,7 @@ class TerrusRequiem(PyneEngine):
                                         self.player.melee_weapon = item
                                         self.player.inventory.remove(item)
 
-                                        self.AddMessage(f"Equiped {item.name}!")
+                                        self.AddMessage(f"Equipped {item.name}!")
 
                                         self.advance_time = True
                                         self.action_time = action_times[Actions.EQUIP]
@@ -582,7 +582,7 @@ class TerrusRequiem(PyneEngine):
                                         self.player.ranged_weapon = item
                                         self.player.inventory.remove(item)
 
-                                        self.AddMessage(f"Equiped {item.name}!")
+                                        self.AddMessage(f"Equipped {item.name}!")
 
                                         self.advance_time = True
                                         self.action_time = action_times[Actions.EQUIP]
@@ -592,7 +592,7 @@ class TerrusRequiem(PyneEngine):
                                         self.player.armor = item
                                         self.player.inventory.remove(item)
 
-                                        self.AddMessage(f"Equiped {item.name}!")
+                                        self.AddMessage(f"Equipped {item.name}!")
 
                                         self.advance_time = True
                                         self.action_time = action_times[Actions.EQUIP]
@@ -642,6 +642,24 @@ class TerrusRequiem(PyneEngine):
                                 # reset
                                 self.waiting_action = None
                                 self.waiting_for_input = False
+                        case Actions.DROP:
+                            if cache:
+                                i = ord(cache.upper()) - 65
+                                if 0 <= i < len(self.player.inventory):
+                                    item = self.player.inventory[i]
+                                    self.player.inventory.pop(i)
+                                    self.current_map.entities.append(ItemPickup(item, self.player.x, self.player.y))
+                                    
+                                    self.AddMessage(f"Dropped {item.name}!")
+
+                                    self.advance_time = True
+                                    self.action_time = action_times[Actions.DROP]
+                                else:
+                                    self.AddMessage("Invalid input!", PyneEngine.Color.LIGHT_YELLOW)
+
+                                # reset
+                                self.waiting_action = None
+                                self.waiting_for_input = False
                 else:
                     for e in self.current_map.entities:
                         if e.x == self.player.x and e.y == self.player.y:
@@ -650,18 +668,23 @@ class TerrusRequiem(PyneEngine):
                     if cache == 'e':
                         self.waiting_for_input = True
                         self.waiting_action = Actions.EQUIP
-                        self.AddMessage("Equip what?")
+                        self.AddMessage("Equip what?", PyneEngine.Color.LIGHT_MAGENTA)
 
                     if cache == 'u':
                         self.waiting_for_input = True
                         self.waiting_action = Actions.UNEQUIP
-                        self.AddMessage("Unequip what?")
+                        self.AddMessage("Unequip what?", PyneEngine.Color.LIGHT_MAGENTA)
+
+                    if cache == 'd':
+                        self.waiting_for_input = True
+                        self.waiting_action = Actions.DROP
+                        self.AddMessage("Drop what?", PyneEngine.Color.LIGHT_MAGENTA)
 
                     if cache == 'c':
                         # player is attempting to close a door
                         self.waiting_for_direction = True
                         self.waiting_action = Actions.CLOSE_DOOR
-                        self.AddMessage("Close door in what direction?")
+                        self.AddMessage("Close door in what direction?", PyneEngine.Color.LIGHT_MAGENTA)
 
                     if cache == 't':
                         # player is entering/leaving targeting mode

@@ -3,7 +3,17 @@ import tcod.path
 import numpy as np
 from .item import *
 from copy import copy
-from .utils import *
+
+class Actions:
+    CLOSE_DOOR = 0
+    MELEE_ATTACK = 1
+    RANGED_ATTACK = 2
+    PICKUP = 3
+    EQUIP = 4
+    UNEQUIP = 5
+    DROP = 6
+
+action_times = [ 75, 100, 50, 125, 150, 140, 50 ]
 
 class Entity:
     def __init__(self, name, char, c_pair, x, y):

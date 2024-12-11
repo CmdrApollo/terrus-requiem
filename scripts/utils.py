@@ -1,5 +1,6 @@
 import random
 from pyne.pyne import *
+from .entity import *
 
 class Actions:
     CLOSE_DOOR = 0
@@ -69,7 +70,6 @@ def crop(buffer, engine):
 def clamp(x, minv, maxv):
     return min(max(minv, x), maxv)
 
-from .entity import *
 class BufferWithEntities(PyneEngine.Buffer):
 
     def __init__(self, width: int, height: int):

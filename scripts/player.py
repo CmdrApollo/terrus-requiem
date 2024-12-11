@@ -1,5 +1,5 @@
-from item import *
-from utils import *
+from .item import *
+from .utils import *
 import math
 
 class Player:

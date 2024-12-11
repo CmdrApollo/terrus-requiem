@@ -9,7 +9,7 @@ class Actions:
 
 action_times = [ 75, 100, 50, 100 ]
 
-from entity import *
+from .entity import *
 
 terminal_width, terminal_height = 88, 36
 MAPWIDTH, MAPHEIGHT = 200, 80

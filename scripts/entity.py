@@ -1,9 +1,9 @@
 from pyne.pyne import *
 import tcod.path
 import numpy as np
-from item import *
+from .item import *
 from copy import copy
-from utils import *
+from .utils import *
 
 class Entity:
     def __init__(self, name, char, c_pair, x, y):

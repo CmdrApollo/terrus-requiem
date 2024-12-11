@@ -1,11 +1,11 @@
 import random
-from entity import *
-from utils import *
+from .entity import *
+from .utils import *
 
 map_width = terminal_width
 map_height = terminal_height - 5
 
-RANDOM_ITEM_CHANCE = 0.0025
+RANDOM_ITEM_CHANCE = 0.025
 
 class Map:
     def __init__(self, name, engine, x, y, w=map_width, h=map_height):
@@ -110,7 +110,7 @@ class Cave(Map):
 
         x, y = self.width // 2, self.height // 2
 
-        for i in range(2500):
+        for i in range(3500):
             self.engine.DrawChar('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), x, y, self.data)
             if i == 0:
                 self.entities.append(AreaEntrance(self.engine.areas['medbay'], x, y))

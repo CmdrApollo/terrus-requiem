@@ -1,5 +1,5 @@
 from pyne.pyne import PyneEngine
-from roll import *
+from .roll import *
 
 class ItemClass:
     MELEE_WEAPON = 0

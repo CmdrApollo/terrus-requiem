@@ -1,5 +1,5 @@
 from pyne.pyne import PyneEngine
-from utils import *
+from .utils import *
 
 class PartType:
     FUEL_TANK = 0

@@ -93,7 +93,7 @@ class PyneEngine:
 
         self._audio_handler = AudioHandler({})
 
-        self.lines = pygame.image.load('scanlines_full.png').convert_alpha()
+        self.lines = pygame.image.load(os.path.join('assets', 'images', 'scanlines_full.png')).convert_alpha()
 
         pygame.key.set_repeat(500, 75)
 

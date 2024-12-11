@@ -1,10 +1,10 @@
 from pyne.pyne import *
-from player import Player
-from entity import *
-from area_map import *
-from ship_chassis import *
-from utils import *
-from dialogue import DialogueManager
+from scripts.player import Player
+from scripts.entity import *
+from scripts.area_map import *
+from scripts.ship_chassis import *
+from scripts.utils import *
+from scripts.dialogue import DialogueManager
 
 import numpy as np
 import tcod.map
@@ -32,7 +32,7 @@ class GameScene:
 
     PLAYING = 2
 
-    HELP = 6
+    HELP = 3
 
 class TerrusRequiem(PyneEngine):
     # name of the game and title of the window
@@ -751,9 +751,6 @@ class TerrusRequiem(PyneEngine):
         self.BlitBuffer(self.game_window, 0, 0)
 
         # draw panels
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 9, panelsize - 1, 8)
-        self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 9)
-
         self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 8)
         self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
 
@@ -762,6 +759,10 @@ class TerrusRequiem(PyneEngine):
 
         self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 14, panelsize - 1, self.TerminalHeight() - 24)
         self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 14)
+        self.DrawText(t := f"{len(self.player.inventory)}/{self.player.capacity}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 14)
+
+        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 9, panelsize - 1, 8)
+        self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 9)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)

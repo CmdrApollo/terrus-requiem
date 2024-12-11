@@ -1,6 +1,6 @@
 from pyne.pyne import *
-from utils import *
-from ship import *
+from .utils import *
+from .ship import *
 
 def generate_chassis_Z800(engine):
     buffer = BufferWithEntities(100, 50)

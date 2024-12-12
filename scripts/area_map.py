@@ -60,7 +60,7 @@ class ShipArea(Map):
                         self.player_start_x = entrancex
                         self.player_start_y = entrancey
 
-                        # self.entities.append(AreaEntrance(self.engine.areas['cave'], entrancex, entrancey))
+                        self.entities.append(AreaEntrance('caves', entrancex, entrancey))
 
         connections = [
             ((0, 0), (1, 0)),
@@ -113,7 +113,7 @@ class Cave(Map):
         for i in range(3500):
             self.engine.DrawChar('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), x, y, self.data)
             if i == 0:
-                self.entities.append(AreaEntrance(self.engine.areas['medbay'], x, y))
+                self.entities.append(AreaEntrance('medbay', x, y))
             if random.random() <= RANDOM_ITEM_CHANCE:
                 self.entities.append(ItemPickup(random.choice(items)(), x, y))
             if random.random() <= self.danger / 1000:

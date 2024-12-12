@@ -51,9 +51,9 @@ class TerrusRequiem(PyneEngine):
 
         self.areas = {}
 
-        self.areas.update({'medbay': ShipArea("Medbay", self, 0, MAPWIDTH, MAPHEIGHT)})
-        self.areas.update({'hanger': ShipArea("Hanger", self, 1, MAPWIDTH, MAPHEIGHT)})
-        self.areas.update({'caves': Cave("Moon Caves", self, 1, MAPWIDTH, MAPHEIGHT)})
+        self.areas.update({ 'medbay': ShipArea("Medbay", self, 0, MAPWIDTH, MAPHEIGHT) })
+        self.areas.update({ 'hanger': ShipArea("Hanger", self, 1, MAPWIDTH, MAPHEIGHT) })
+        self.areas.update({ 'caves' : Cave("Moon Caves", self, 1, MAPWIDTH, MAPHEIGHT) })
 
         # used for collisions and things
         self.current_map = self.areas['caves']
@@ -779,7 +779,6 @@ class TerrusRequiem(PyneEngine):
             case GameScene.PLAYING:
                 # blit the map data buffer to the game window
                 # and put the map name on the bottom of the screen
-                self.Clear('%', (self.Color.DARK_GRAY, self.Color.BACKGROUND), self.game_window)
                 self.BlitBuffer(self.current_map.data, -self.camx, -self.camy, self.game_window)
 
                 if self.player.firing:

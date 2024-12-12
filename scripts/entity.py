@@ -104,7 +104,7 @@ class AreaEntrance(Entity):
 
     def PlayerKeyInteract(self, engine, player, key):
         if key == '>':
-            engine.LoadMap(self.area)
+            engine.LoadMap(engine.areas[self.area])
 
 # ==============================================================================================================
 
@@ -139,6 +139,8 @@ class BasicEnemy(Entity):
         player.AttackRanged(self)
 
     def OnMyTurn(self, engine):
+        # TODO implement behavior trees
+
         while self.waited_time >= self.speed:
             self.waited_time -= self.speed
             

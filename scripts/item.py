@@ -33,6 +33,10 @@ class MeleeWeapon(Item):
     
     def roll_damage(self, external_modifier=0):
         return self.roll.roll() + external_modifier
+
+class Rock(MeleeWeapon):
+    def __init__(self):
+        super().__init__("Rock", MeleeWeaponType.BLUNT, Roll(1, 4, 2), 'o', PyneEngine.Color.GRAY) # 1d4+2 blunt
     
 class Club(MeleeWeapon):
     def __init__(self):
@@ -60,11 +64,11 @@ class RangedWeapon(Item):
 
 class BasicBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), '[', PyneEngine.Color.GRAY) # 1d6+2
+        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), '[', PyneEngine.Color.GRAY) # 1d6+2
 
 class AdvancedBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Adv. Blaster", '/', PyneEngine.Color.DARK_YELLOW, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '[', PyneEngine.Color.WHITE) # 2d6+2
+        super().__init__("Adv. Blaster", '/', PyneEngine.Color.YELLOW, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '[', PyneEngine.Color.WHITE) # 2d6+2
 
 class Armor(Item):
     def __init__(self, name: str, pv: int, char: str, color: str):
@@ -100,7 +104,3 @@ class Corpse(Item):
 class RatCorpse(Corpse):
     def __init__(self):
         super().__init__("Rat Corpse", PyneEngine.Color.BROWN)
-
-class Rock(Item):
-    def __init__(self):
-        super().__init__("Rock", ItemClass.MISC, 'o', PyneEngine.Color.GRAY)

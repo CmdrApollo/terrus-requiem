@@ -51,11 +51,12 @@ class AdvancedSpear(MeleeWeapon):
         super().__init__("Adv. Spear", MeleeWeaponType.SHARP, Roll(2, 6, 4), '/', PyneEngine.Color.WHITE) # 1d6+4 sharp
 
 class RangedWeapon(Item):
-    def __init__(self, name: str, proj_char: str, proj_color: str, weapon_type: int, roll: Roll, char: str, color: str):
+    def __init__(self, name: str, proj_char: str, proj_color: str, weapon_type: int, roll: Roll, max_shot_distance: int, char: str, color: str):
         super().__init__(name, ItemClass.RANGED_WEAPON, char, color)
 
         self.weapon_type = weapon_type
         self.roll = roll
+        self.max_shot_distance = max_shot_distance
         self.proj_char = proj_char
         self.proj_color = proj_color
     
@@ -64,11 +65,11 @@ class RangedWeapon(Item):
 
 class BasicBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), '[', PyneEngine.Color.GRAY) # 1d6+2
+        super().__init__("Bsc. Blaster", '/', PyneEngine.Color.YELLOW, ItemClass.RANGED_WEAPON, Roll(1, 6, 2), 10, '[', PyneEngine.Color.GRAY) # 1d6+2
 
 class AdvancedBlaster(RangedWeapon):
     def __init__(self):
-        super().__init__("Adv. Blaster", '/', PyneEngine.Color.YELLOW, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), '[', PyneEngine.Color.WHITE) # 2d6+2
+        super().__init__("Adv. Blaster", '/', PyneEngine.Color.RED, ItemClass.RANGED_WEAPON, Roll(2, 6, 2), 15, '[', PyneEngine.Color.WHITE) # 2d6+2
 
 class Armor(Item):
     def __init__(self, name: str, pv: int, char: str, color: str):

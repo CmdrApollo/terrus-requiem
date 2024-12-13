@@ -2,6 +2,7 @@ from pyne.pyne import *
 import tcod.path
 import numpy as np
 from .item import *
+from .logs import LOG_CONTENTS
 from copy import copy
 
 class Actions:
@@ -42,7 +43,7 @@ class Entity:
         pass
 
     def PlayerKeyInteract(self, engine, player, key):
-        pass
+        return False
 
     def OnShoot(self, player):
         pass
@@ -105,6 +106,8 @@ class AreaEntrance(Entity):
     def PlayerKeyInteract(self, engine, player, key):
         if key == '>':
             engine.LoadMap(engine.areas[self.area])
+            return True
+        return False
 
 # ==============================================================================================================
 
@@ -144,10 +147,10 @@ class BasicEnemy(Entity):
         while self.waited_time >= self.speed:
             self.waited_time -= self.speed
             
-            self.OnMove(engine)
-
             if abs(self.x - engine.player.x) <= 1 and abs(self.y - engine.player.y) <= 1:
                 engine.player.AttemptToDamage(self.name, self.damage + random.randint(-1, 1))
+            else:
+                self.OnMove(engine)
 
     def OnMove(self, engine):
         solids = engine.solids
@@ -223,3 +226,16 @@ class ItemPickup(Entity):
                 engine.action_time = action_times[Actions.PICKUP]
             else:
                 engine.AddMessage("Insufficient space.", PyneEngine.Color.LIGHT_YELLOW)
+            return True
+        return False
+
+class ShipLog(Entity):
+    def __init__(self, _id, x, y):
+        super().__init__(f"Ship Log #{_id}", '$', (PyneEngine.Color.WHITE, PyneEngine.Color.BACKGROUND), x, y)
+        self.contents = LOG_CONTENTS[_id]
+    
+    def PlayerKeyInteract(self, engine, player, key):
+        if key == 'r':
+            engine.dialogue_manager.queue_text(self.contents)
+            return True
+        return False

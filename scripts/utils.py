@@ -36,11 +36,6 @@ def wallify(buffer, engine, colorscheme=0):
                         engine.DrawChar('#', (engine.Color.BACKGROUND, random.choice(schemes[colorscheme])), x, y, buffer)
                         break
 
-    for x in range(buffer.width):
-        for y in range(buffer.height):
-            if buffer.GetAt(x, y).symbol == ' ':
-                engine.DrawChar('.', (engine.Color.DARK_GRAY, engine.Color.BACKGROUND), x, y, buffer)
-
 def crop(buffer, engine):
     min_x, max_x = 0xffff, 0
     min_y, max_y = 0xffff, 0
@@ -69,6 +64,9 @@ def crop(buffer, engine):
 
 def clamp(x, minv, maxv):
     return min(max(minv, x), maxv)
+
+def distance(x1, y1, x2, y2):
+    return math.sqrt((x1 - x2) **2 + (y1 - y2) ** 2)
 
 class BufferWithEntities(PyneEngine.Buffer):
 

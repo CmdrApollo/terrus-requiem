@@ -375,8 +375,8 @@ class TerrusRequiem(PyneEngine):
             
             match scr_el.symbol:
                 # check what character we are about to collide with
-                case '#' | '=':
-                    # if it is wall or water, abort the movement
+                case '#':
+                    # if it is wall, abort the movement
                     allow_move = False
                 case _:
                     # otherwise we chill
@@ -499,6 +499,11 @@ class TerrusRequiem(PyneEngine):
                     
                     self.player.projx += math.cos(self.player.heading) * delta * 10
                     self.player.projy += math.sin(self.player.heading) * delta * 10
+
+                    if distance(self.player.x, self.player.y, self.player.projx, self.player.projy) > self.player.ranged_weapon.max_shot_distance:
+                        self.player.firing = False
+                        self.advance_time = True
+                        self.action_time = action_times[Actions.RANGED_ATTACK]
 
                     if self.current_map.data.GetAt(round(self.player.projx), round(self.player.projy)).symbol == '#':
                         # abort
@@ -663,7 +668,8 @@ class TerrusRequiem(PyneEngine):
                 else:
                     for e in self.current_map.entities:
                         if e.x == self.player.x and e.y == self.player.y:
-                            e.PlayerKeyInteract(self, self.player, cache)
+                            if e.PlayerKeyInteract(self, self.player, cache):
+                                break
 
                     if cache == 'e':
                         self.waiting_for_input = True
@@ -882,18 +888,23 @@ class TerrusRequiem(PyneEngine):
         if show_dialogue:
             self.dialogue_manager.draw(self)
 
-        if self.targetx + 1:
-            if self.targetx - self.camx < self.game_window.width and self.targety - self.camy < self.game_window.height:
+        if self.targetx + 1 and self.targetx - self.camx < self.game_window.width and self.targety - self.camy < self.game_window.height:
                 if (pygame.time.get_ticks() // 500) % 2:
                     self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, self.targety - self.camy)
                 if self.questioning:
+                    qy = 0
+                    df = True
                     if active_visibility[self.targety * self.current_map.width + self.targetx]:
                         t = {'.': "Empty space.", '#': "A wall.", '=': "Water."}[self.current_map.data.GetAt(self.targetx, self.targety).symbol]
                         for e in self.current_map.entities:
                             if e.x == self.targetx and e.y == self.targety:
                                 t = e.name + "."
-                        self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, 0)
-
+                                self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, qy)
+                                qy += 1
+                                df = False
+                        if df:
+                            self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, qy)
+ 
         return True
 
 # create the game object and start the game :)

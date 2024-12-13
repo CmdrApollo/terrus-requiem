@@ -28,3 +28,7 @@ Terrus Requiem is a Sci-Fi themed Traditional Roguelike created by Mélanie (Cmd
 - [ ] Balancing
 - [ ] More animations?
 - [ ] Worldbuilding Worldbuilding Worldbuilding
+- [ ] UI updates
+- [ ] Look into using Djikstra instead of A*
+- [ ] Look into adding mouse support
+- [ ] Look into adding tiles

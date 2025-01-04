@@ -51,12 +51,14 @@ class TerrusRequiem(PyneEngine):
 
         self.areas = {}
 
-        self.areas.update({ 'medbay': ShipArea("Medbay", self, 0, MAPWIDTH, MAPHEIGHT) })
-        self.areas.update({ 'hanger': ShipArea("Hanger", self, 1, MAPWIDTH, MAPHEIGHT) })
+        self.areas.update({ 'medbay': Medbay("Medbay", self, MAPWIDTH // 2, MAPHEIGHT // 2) })
+        self.areas.update({ 'maindeck': MainDeck("Main Deck", self, MAPWIDTH, MAPHEIGHT) })
+        self.areas.update({ 'controldeck': ControlDeck("Control Deck", self, MAPWIDTH // 2, MAPHEIGHT // 2) })
+        self.areas.update({ 'hanger': Hanger("Hanger", self, int(MAPWIDTH * 0.75), int(MAPHEIGHT * 0.75)) })
         self.areas.update({ 'caves' : Cave("Moon Caves", self, 1, MAPWIDTH, MAPHEIGHT) })
 
         # used for collisions and things
-        self.current_map = self.areas['caves']
+        self.current_map = self.areas['medbay']
         self.current_overlapping_element = None
 
         # dialogue manager
@@ -692,7 +694,7 @@ class TerrusRequiem(PyneEngine):
                         self.waiting_action = Actions.CLOSE_DOOR
                         self.AddMessage("Close door in what direction?", PyneEngine.Color.LIGHT_MAGENTA)
 
-                    if cache == 't':
+                    if cache == 't' and self.player.ranged_weapon:
                         # player is entering/leaving targeting mode
                         self.questioning = False
                         self.targeting = not self.targeting
@@ -848,11 +850,11 @@ class TerrusRequiem(PyneEngine):
                 self.DrawText(t := f"SP: {self.player.energy}/{self.player.max_energy}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 2)
 
                 # draw weapons
-                w = "Ml Wp: " + (self.player.melee_weapon.name + " " + str(self.player.melee_weapon.roll) if self.player.melee_weapon else "nul")
+                w = "M]l Wp: " + (self.player.melee_weapon.name + " " + str(self.player.melee_weapon.roll) if self.player.melee_weapon else "nul")
                 self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 7)
-                w = "Rg Wp: " + (self.player.ranged_weapon.name + " " + str(self.player.ranged_weapon.roll) if self.player.ranged_weapon else "nul")
+                w = "R]g Wp: " + (self.player.ranged_weapon.name + " " + str(self.player.ranged_weapon.roll) if self.player.ranged_weapon else "nul")
                 self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 8)
-                w = "Armor: " + (self.player.armor.name + " (" + str(self.player.armor.pv) + "PV)" if self.player.armor else "nul")
+                w = "A]rmor: " + (self.player.armor.name + " (" + str(self.player.armor.pv) + "PV)" if self.player.armor else "nul")
                 self.DrawText(w, (self.Color.WHITE, self.Color.BLACK), self.TerminalWidth() - panelsize + 1, 9)
 
                 # draw inventory

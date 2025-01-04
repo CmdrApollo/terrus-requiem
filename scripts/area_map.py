@@ -31,10 +31,9 @@ class Map:
     def generate(self):
         pass
 
-class ShipArea(Map):
-    def __init__(self, name, engine, danger=0, w=map_width, h=map_height):
+class MainDeck(Map):
+    def __init__(self, name, engine, w=map_width, h=map_height):
         super().__init__(name, engine, w // 2 - 1, h // 2 - 3, w, h)
-        self.danger = danger
 
     def generate(self):
         monsters = [Rat, RockDemon]
@@ -59,11 +58,16 @@ class ShipArea(Map):
         rects = bsp.pre_order()
         entrancex = -1
         entrancey = -1
-        
-        for r in rects:
+
+        for i, r in enumerate(rects):
             if not r.children:
                 x, y, w, h = r.x, r.y, r.width, r.height
                 self.engine.FillRect('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), x + 4, y + 4, w - 8, h - 8, self.data)
+                if entrancex == -1:
+                    self.player_start_x = entrancex = x + 4 + (w - 8) // 2
+                    self.player_start_y = entrancey = y + 4 + (h - 8) // 2
+
+                    self.entities.append(AreaEntrance('caves', entrancex, entrancey))
             else:
                 node1, node2 = r.children
                 x1, y1, w1, h1 = node1.x, node1.y, node1.width, node1.height
@@ -83,6 +87,47 @@ class ShipArea(Map):
                 self.engine.DrawHLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), mx, y2, x2, '.', self.data)
 
         wallify(self.data, self.engine, 0)
+
+class Medbay(Map):
+    def __init__(self, name, engine, w=map_width, h=map_height):
+        super().__init__(name, engine, w // 2 - 1, h // 2 - 3, w, h)
+
+    def generate(self):
+        self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
+
+        self.player_start_x = 10
+        self.player_start_y = 12
+
+        self.engine.FillCircle('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 16, 12, 10, self.data)
+        self.engine.FillCircle('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 28, 12, 10, self.data)
+        self.engine.FillCircle('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 40, 12, 10, self.data)
+        self.engine.DrawCircle(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 28, 12, 5, self.data)
+
+        self.engine.DrawVLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 21, 5, 10, ' ', self.data)
+        self.engine.DrawVLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 33, 5, 10, ' ', self.data)
+        self.engine.DrawVLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 21, 15, 20, ' ', self.data)
+        self.engine.DrawVLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 33, 15, 20, ' ', self.data)
+
+        self.entities.append(AreaEntrance('maindeck', 40, 12))
+
+        self.entities.append(ShipLog(0, 12, 6))
+
+        wallify(self.data, self.engine, 0)
+
+class ControlDeck(Map):
+    def __init__(self, name, engine, w=map_width, h=map_height):
+        super().__init__(name, engine, w // 2 - 1, h // 2 - 3, w, h)
+
+    def generate(self):
+        self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
+
+class Hanger(Map):
+    def __init__(self, name, engine, w=map_width, h=map_height):
+        super().__init__(name, engine, w // 2 - 1, h // 2 - 3, w, h)
+
+    def generate(self):
+        self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
+
 
 class Cave(Map):
     def __init__(self, name, engine, danger, w=map_width, h=map_height):

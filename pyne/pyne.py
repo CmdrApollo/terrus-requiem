@@ -268,6 +268,58 @@ class PyneEngine:
             for j in range(h):
                 self.DrawChar(char, c_pair, x + i, y + j, scr=scr)
     
+    def _DrawCircle(self, char, c_pair, px, py, x, y, scr=None):
+        self.DrawChar(char, c_pair, px+x, py+y, scr)
+        self.DrawChar(char, c_pair, px-x, py+y, scr)
+        self.DrawChar(char, c_pair, px+x, py-y, scr)
+        self.DrawChar(char, c_pair, px-x, py-y, scr)
+        self.DrawChar(char, c_pair, px+y, py+x, scr)
+        self.DrawChar(char, c_pair, px-y, py+x, scr)
+        self.DrawChar(char, c_pair, px+y, py-x, scr)
+        self.DrawChar(char, c_pair, px-y, py-x, scr)
+    
+    def _FillCircle(self, char, c_pair, px, py, x, y, scr=None):
+        self.DrawHLine(c_pair, px-x, py+y, px+x, char, scr)
+        self.DrawHLine(c_pair, px-x, py-y, px+x, char, scr)
+        self.DrawHLine(c_pair, px-y, py+x, px+y, char, scr)
+        self.DrawHLine(c_pair, px-y, py-x, px+y, char, scr)
+    
+    def DrawCircle(self, char, c_pair, px, py, r, scr=None):
+        x = 0
+        y = r
+        d = 3 - 2 * r
+
+        while x <= y:
+            self._DrawCircle(char, c_pair, px, py, x, y, scr)
+
+            if d < 0:
+                x += 1
+                d += 4 * x + 6
+            else:
+                x += 1
+                y -= 1
+                d += 4 * (x - y) + 10
+
+        self._DrawCircle(char, c_pair, px, py, x, y, scr)            
+
+    def FillCircle(self, char, c_pair, px, py, r, scr=None):
+        x = 0
+        y = r
+        d = 3 - 2 * r
+
+        while x <= y:
+            self._FillCircle(char, c_pair, px, py, x, y, scr)
+
+            if d < 0:
+                x += 1
+                d += 4 * x + 6
+            else:
+                x += 1
+                y -= 1
+                d += 4 * (x - y) + 10
+
+        self._FillCircle(char, c_pair, px, py, x, y, scr)            
+
     def BlitBuffer(self, buffer, x, y, scr=None):
         scr = scr if scr else self._scr_buf
 

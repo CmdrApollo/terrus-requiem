@@ -14,7 +14,7 @@ Terrus Requiem is a Sci-Fi themed Traditional Roguelike created by Mélanie (Cmd
     - [ ] Decide on how ship building works (in progress)
     - [ ] Implement ship building
 - [ ] More weapons/armor/item/enemies (general content)
-- [x] Stringing together maps
+- [ ] Stringing together maps (in progress)
 - [ ] More maps/gameworld
 - [ ] Updated map generation
 - [ ] Basic game progression

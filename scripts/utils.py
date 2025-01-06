@@ -22,7 +22,7 @@ def string_to_seed(string):
 def wallify(buffer, engine, colorscheme=0):
     schemes = [
         [engine.Color.GRAY, engine.Color.DARK_GRAY] * 2 + [engine.Color.LIGHT_BLUE],    # ship
-        [engine.Color.BROWN, engine.Color.DARK_BROWN, engine.Color.VERY_DARK_RED] * 2 + [engine.Color.GRAY], # caves
+        [engine.Color.BROWN, engine.Color.DARK_BROWN, engine.Color.VERY_DARK_RED], # caves
     ]
 
     neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, 1), (1, 1), (1, -1), (-1, -1)]

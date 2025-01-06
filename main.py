@@ -732,8 +732,8 @@ class TerrusRequiem(PyneEngine):
                         self.targety = self.player.y if self.questioning else -1
 
                     if (self.targeting or self.questioning) and has_direction:
-                        self.targetx += self.direction_x
-                        self.targety += self.direction_y
+                        self.targetx = clamp(self.targetx + self.direction_x, 0, self.current_map.data.width - 1)
+                        self.targety = clamp(self.targety + self.direction_y, 0, self.current_map.data.height - 1)
                     
                     if cache == 'f' and self.targeting:
                         # fire the weapon

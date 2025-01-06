@@ -101,7 +101,6 @@ class Medbay(Map):
         self.engine.FillCircle('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 16, 12, 10, self.data)
         self.engine.FillCircle('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 28, 12, 10, self.data)
         self.engine.FillCircle('.', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 40, 12, 10, self.data)
-        self.engine.DrawCircle(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 28, 12, 5, self.data)
 
         self.engine.DrawVLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 21, 5, 10, ' ', self.data)
         self.engine.DrawVLine((self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 33, 5, 10, ' ', self.data)
@@ -151,7 +150,7 @@ class Cave(Map):
             if i == 0:
                 self.entities.append(AreaEntrance('medbay', x, y))
             if i == 1:
-                self.entities.append(ShipLog(0, x, y))
+                self.entities.append(ShipLog(1, x, y))
             if random.random() <= RANDOM_ITEM_CHANCE:
                 self.entities.append(ItemPickup(random.choice(items)(), x, y))
             if random.random() <= self.danger / 1000:

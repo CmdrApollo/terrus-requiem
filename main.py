@@ -128,13 +128,13 @@ class TerrusRequiem(PyneEngine):
         self.DrawTextLines(text, (self.Color.WHITE, self.Color.BACKGROUND), 6, 3, scr=scr)
 
     def OnConstruct(self):
-        self.LoadAudio("main_theme", ["assets", "audio", "main_theme.wav"])
+        # self.LoadAudio("main_theme", ["assets", "audio", "main_theme.wav"])
 
-        self.LoadAudio("hit_1", ["assets", "audio", "hit", "hit_1.wav"])
-        self.LoadAudio("hit_2", ["assets", "audio", "hit", "hit_2.wav"])
-        self.LoadAudio("hit_3", ["assets", "audio", "hit", "hit_3.wav"])
+        # self.LoadAudio("hit_1", ["assets", "audio", "hit", "hit_1.wav"])
+        # self.LoadAudio("hit_2", ["assets", "audio", "hit", "hit_2.wav"])
+        # self.LoadAudio("hit_3", ["assets", "audio", "hit", "hit_3.wav"])
 
-        self.PlaySong("main_theme")
+        # self.PlaySong("main_theme")
 
         # === GENERATE MAIN MENU ===
 
@@ -698,8 +698,28 @@ class TerrusRequiem(PyneEngine):
                         # player is entering/leaving targeting mode
                         self.questioning = False
                         self.targeting = not self.targeting
-                        self.targetx = self.player.x if self.targeting else -1
-                        self.targety = self.player.y if self.targeting else -1
+
+                        if self.targeting:
+                            closest_x = 10_000
+                            closest_y = 10_000
+                            closest_distance = 10_000
+
+                            for e in self.current_map.entities:
+                                if issubclass(type(e), BasicEnemy):
+                                    if d := distance(e.x, e.y, self.player.x, self.player.y) < closest_distance:
+                                        closest_distance = d
+                                        closest_x = e.x
+                                        closest_y = e.y
+                            
+                            if closest_distance > 100:
+                                closest_x = self.player.x
+                                closest_y = self.player.y
+                                closest_distance = 0
+
+                            self.targetx = closest_x
+                            self.targety = closest_y
+                        else:
+                            self.targetx = self.targety = -1
 
                     if cache == '?':
                         # player is entering/leaving questioning mode
@@ -789,10 +809,10 @@ class TerrusRequiem(PyneEngine):
                 # and put the map name on the bottom of the screen
                 self.BlitBuffer(self.current_map.data, -self.camx, -self.camy, self.game_window)
 
+                self.DrawEntities()
+
                 if self.player.firing:
                     self.DrawChar(self.player.ranged_weapon.proj_char, (self.player.ranged_weapon.proj_color, self.Color.BACKGROUND), round(self.player.projx) - self.camx, round(self.player.projy) - self.camy, self.game_window)
-
-                self.DrawEntities()
             
             case GameScene.HELP:
                 self.BlitBuffer([help_screen1, help_screen2, help_screen3][self.help_screen], 0, 0)

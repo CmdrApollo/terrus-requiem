@@ -83,7 +83,7 @@ class Player:
 
                 self.engine.AddMessage(f"The {entity.name} dodged your attack!")
             else:
-                self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
+                # self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
 
                 dmg = self.melee_weapon.roll_damage(self.strength)
 
@@ -105,7 +105,7 @@ class Player:
         if random.random() <= self.ChanceToHitRanged():
             # hit successful
 
-            self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
+            # self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
 
             dmg = self.ranged_weapon.roll_damage()
 

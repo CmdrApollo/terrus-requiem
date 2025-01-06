@@ -668,21 +668,26 @@ class TerrusRequiem(PyneEngine):
                                 self.waiting_action = None
                                 self.waiting_for_input = False
                 else:
+                    # call player key interact for all entities on the player's tile
                     for e in self.current_map.entities:
                         if e.x == self.player.x and e.y == self.player.y:
                             if e.PlayerKeyInteract(self, self.player, cache):
                                 break
 
+                    # equip
                     if cache == 'e':
                         self.waiting_for_input = True
                         self.waiting_action = Actions.EQUIP
                         self.AddMessage("Equip what?", PyneEngine.Color.LIGHT_MAGENTA)
 
+
+                    # unequip
                     if cache == 'u':
                         self.waiting_for_input = True
                         self.waiting_action = Actions.UNEQUIP
                         self.AddMessage("Unequip what?", PyneEngine.Color.LIGHT_MAGENTA)
 
+                    # drop
                     if cache == 'd':
                         self.waiting_for_input = True
                         self.waiting_action = Actions.DROP
@@ -700,6 +705,7 @@ class TerrusRequiem(PyneEngine):
                         self.targeting = not self.targeting
 
                         if self.targeting:
+                            # TODO sometimes doesn't target closest enemy?
                             # target the closest enemy found
                             closest_x = 10_000
                             closest_y = 10_000
@@ -731,6 +737,7 @@ class TerrusRequiem(PyneEngine):
                         self.targetx = self.player.x if self.questioning else -1
                         self.targety = self.player.y if self.questioning else -1
 
+                    # move the targeting cursor
                     if (self.targeting or self.questioning) and has_direction:
                         self.targetx = clamp(self.targetx + self.direction_x, 0, self.current_map.data.width - 1)
                         self.targety = clamp(self.targety + self.direction_y, 0, self.current_map.data.height - 1)

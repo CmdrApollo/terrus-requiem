@@ -742,6 +742,9 @@ class TerrusRequiem(PyneEngine):
                         self.targetx = clamp(self.targetx + self.direction_x, 0, self.current_map.width - 1)
                         self.targety = clamp(self.targety + self.direction_y, 0, self.current_map.height - 1)
                     
+                        self.camx = clamp(self.targetx - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
+                        self.camy = clamp(self.targety - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
+                    
                     if cache == 'f' and self.targeting:
                         # fire the weapon
                         self.targeting = False
@@ -773,9 +776,10 @@ class TerrusRequiem(PyneEngine):
 
                     if self.advance_time:
                         self.AdvanceTime()
-                    
-                    self.camx = clamp(self.player.x - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
-                    self.camy = clamp(self.player.y - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
+
+                    if not (self.targeting or self.questioning):
+                        self.camx = clamp(self.player.x - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
+                        self.camy = clamp(self.player.y - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
            
         return True
     

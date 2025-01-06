@@ -705,7 +705,6 @@ class TerrusRequiem(PyneEngine):
                         self.targeting = not self.targeting
 
                         if self.targeting:
-                            # TODO sometimes doesn't target closest enemy?
                             # target the closest enemy found
                             closest_x = 10_000
                             closest_y = 10_000
@@ -713,7 +712,8 @@ class TerrusRequiem(PyneEngine):
 
                             for e in self.current_map.entities:
                                 if issubclass(type(e), BasicEnemy):
-                                    if d := distance(e.x, e.y, self.player.x, self.player.y) < closest_distance:
+                                    d = distance(e.x, e.y, self.player.x, self.player.y)
+                                    if d < closest_distance:
                                         closest_distance = d
                                         closest_x = e.x
                                         closest_y = e.y
@@ -741,9 +741,6 @@ class TerrusRequiem(PyneEngine):
                     if (self.targeting or self.questioning) and has_direction:
                         self.targetx = clamp(self.targetx + self.direction_x, 0, self.current_map.width - 1)
                         self.targety = clamp(self.targety + self.direction_y, 0, self.current_map.height - 1)
-                    
-                        self.camx = clamp(self.targetx - self.game_window.width // 2, 0, self.current_map.width - self.game_window.width)
-                        self.camy = clamp(self.targety - self.game_window.height // 2, 0, self.current_map.height - self.game_window.height)
                     
                     if cache == 'f' and self.targeting:
                         # fire the weapon

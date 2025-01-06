@@ -739,8 +739,8 @@ class TerrusRequiem(PyneEngine):
 
                     # move the targeting cursor
                     if (self.targeting or self.questioning) and has_direction:
-                        self.targetx = clamp(self.targetx + self.direction_x, 0, self.current_map.data.width - 1)
-                        self.targety = clamp(self.targety + self.direction_y, 0, self.current_map.data.height - 1)
+                        self.targetx = clamp(self.targetx + self.direction_x, 0, self.current_map.width - 1)
+                        self.targety = clamp(self.targety + self.direction_y, 0, self.current_map.height - 1)
                     
                     if cache == 'f' and self.targeting:
                         # fire the weapon
@@ -758,6 +758,7 @@ class TerrusRequiem(PyneEngine):
                         # remove the entity if it has marked itself for removal
                         # (usually upon death)
                         if move_interact_entity.to_remove:
+                            # entity drops
                             if random.random() <= self.player.pickup_chance and len(move_interact_entity.drops):
                                 self.current_map.entities.append(ItemPickup(random.choice(move_interact_entity.drops)(), move_interact_entity.x, move_interact_entity.y))
 

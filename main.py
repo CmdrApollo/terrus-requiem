@@ -700,6 +700,7 @@ class TerrusRequiem(PyneEngine):
                         self.targeting = not self.targeting
 
                         if self.targeting:
+                            # target the closest enemy found
                             closest_x = 10_000
                             closest_y = 10_000
                             closest_distance = 10_000
@@ -711,7 +712,9 @@ class TerrusRequiem(PyneEngine):
                                         closest_x = e.x
                                         closest_y = e.y
                             
-                            if closest_distance > 100:
+                            if closest_distance > 25:
+                                # if the closest enemy is more than 25 units away,
+                                # set the target position to the player position
                                 closest_x = self.player.x
                                 closest_y = self.player.y
                                 closest_distance = 0

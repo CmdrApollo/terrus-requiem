@@ -2,6 +2,13 @@ from .item import *
 from .utils import *
 import math
 
+class PlayerStats:
+    ENDURANCE = 0
+    DEXTERITY = 1
+    INTELLIGENCE = 2
+    PERCEPTION = 3
+    STRENGTH = 4
+
 class Player:
     def __init__(self, engine, x, y):
         self.engine = engine
@@ -9,23 +16,13 @@ class Player:
         self.x = x
         self.y = y
 
-        self.endurance = 5
-        self.dexterity = 5
-        self.intelligence = 5
-        self.perception = 9
-        self.strength = 5
+        self.stats = [5, 5, 5, 5, 5]
 
-        self.sight_distance = 5 + self.perception
+        self.melee_weapon = None
+        self.ranged_weapon = None
+        self.armor = None
 
-        self.melee_weapon = Club()
-        self.ranged_weapon = BasicBlaster()
-        self.armor = LightArmor()
-
-        self.speed = 100
-
-        self.health = self.max_health = 100
-
-        self.energy = self.max_energy = 100
+        self.CalculateStats()
 
         self.firing = False
         self.heading = 0
@@ -34,9 +31,20 @@ class Player:
 
         self.inventory = []
 
-        self.capacity = 10
-
         self.pickup_chance = 0.5
+
+    def CalculateStats(self):
+        self.sight_distance = 5 + self.stats[PlayerStats.PERCEPTION]
+
+        self.speed = 150 - 10 * self.stats[PlayerStats.DEXTERITY]
+
+        self.health = self.max_health = 5 * self.stats[PlayerStats.ENDURANCE] + self.stats[PlayerStats.STRENGTH]
+
+        self.energy = self.max_energy = 100
+
+        self.capacity = 2 * self.stats[PlayerStats.ENDURANCE]
+
+        self.pickup_chance = self.stats[PlayerStats.INTELLIGENCE] / 10
 
     def CanPickupItem(self):
         return len(self.inventory) < self.capacity
@@ -46,7 +54,7 @@ class Player:
 
     def AttemptToDamage(self, name, dmg):
         d = dmg
-        if random.randint(1, 10) <= self.dexterity - 1:
+        if random.randint(1, 10) <= self.stats[PlayerStats.DEXTERITY] - 1:
             self.engine.AddMessage(f"You dodged the attack from the {name}!")
             return
         armor_was_destroyed = False
@@ -69,10 +77,10 @@ class Player:
                 self.engine.OnGameOver()
 
     def ChanceToHitMelee(self):
-        return + ((self.perception + 1) / 10)
+        return + ((self.stats[PlayerStats.PERCEPTION] + 1) / 10)
 
     def ChanceToHitRanged(self):
-        return + ((self.perception + 1) / 10)
+        return + ((self.stats[PlayerStats.PERCEPTION] + 1) / 10)
     
     def AttackMelee(self, entity):
         if random.random() <= self.ChanceToHitMelee():
@@ -85,7 +93,10 @@ class Player:
             else:
                 # self.engine.PlaySound(f"hit_{random.randint(1, 3)}")
 
-                dmg = self.melee_weapon.roll_damage(self.strength)
+                if not self.melee_weapon:
+                    dmg = self.stats[PlayerStats.STRENGTH] - 1
+                else:
+                    dmg = self.melee_weapon.roll_damage(self.stats[PlayerStats.STRENGTH])
 
                 self.engine.AddMessage(f"You deal {dmg} damage to the {entity.name}!")
 
@@ -99,7 +110,7 @@ class Player:
             self.engine.AddMessage(f"You missed the {entity.name}.")
                             
         self.engine.advance_time = True
-        self.engine.action_time = action_times[Actions.RANGED_ATTACK]
+        self.engine.action_time = action_times[Actions.MELEE_ATTACK]
     
     def AttackRanged(self, entity):
         if random.random() <= self.ChanceToHitRanged():

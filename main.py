@@ -1,5 +1,5 @@
 from pyne.pyne import *
-from scripts.player import Player
+from scripts.player import Player, PlayerStats
 from scripts.entity import *
 from scripts.area_map import *
 from scripts.ship_chassis import *
@@ -30,9 +30,11 @@ class GameScene:
     MAIN_MENU = 0
     CREDITS = 1
 
-    PLAYING = 2
+    CHARACTER_CREATION = 2
 
-    HELP = 3
+    PLAYING = 3
+
+    HELP = 4
 
 class TerrusRequiem(PyneEngine):
     # name of the game and title of the window
@@ -95,6 +97,8 @@ class TerrusRequiem(PyneEngine):
         self.targety = -1
         self.targeting = False
         self.questioning = False
+
+        self.selected_stat = 0
 
     def OnGameOver(self):
         pass
@@ -466,7 +470,7 @@ class TerrusRequiem(PyneEngine):
         
         if self.current_scene == GameScene.MAIN_MENU:
             if cache == 'p':
-                self.current_scene = GameScene.PLAYING
+                self.current_scene = GameScene.CHARACTER_CREATION
             elif cache == 'c':
                 # move to credits scene
                 self.current_scene = GameScene.CREDITS
@@ -494,6 +498,64 @@ class TerrusRequiem(PyneEngine):
 
         # the dreaded switch case
         match self.current_scene:
+            case GameScene.CHARACTER_CREATION:
+                self.waiting_for_direction = True
+
+                if self.HandleDirection():
+                    match self.direction_y:
+                        case  1: self.selected_stat = (self.selected_stat + 1) % 5
+                        case -1:
+                            self.selected_stat -= 1
+                            if self.selected_stat < 0: self.selected_stat += 5
+                    match self.direction_x:
+                        case  1: self.player.stats[self.selected_stat] = min(8, self.player.stats[self.selected_stat] + 1)
+                        case -1: self.player.stats[self.selected_stat] = max(3, self.player.stats[self.selected_stat] - 1)
+                    self.waiting_for_direction = True
+                
+                if cache == ' ' and 25 - sum(self.player.stats) == 0:
+                    # if player has no more points to distribute and they press space,
+                    # start the game proper and regenerate stats
+                    self.player.CalculateStats()
+                    self.current_scene = GameScene.PLAYING
+                
+                if cache == '?':
+                    match self.selected_stat:
+                        case 0: # endurance
+                            self.dialogue_manager.queue_text([
+                                "Endurance",
+                                "Endurance is used to calculate",
+                                "your HP and your inventory",
+                                "capacity."
+                            ])
+                        case 1: # dexterity
+                            self.dialogue_manager.queue_text([
+                                "Dexterity",
+                                "Dexterity is used to calculate",
+                                "your movement speed and your",
+                                "chance to dodge enemies."
+                            ])
+                        case 2: # intelligence
+                            self.dialogue_manager.queue_text([
+                                "Intelligence",
+                                "Intelligence is used to",
+                                "calculate your chance for",
+                                "enemies to drop items."
+                            ])
+                        case 3: # perception
+                            self.dialogue_manager.queue_text([
+                                "Perception",
+                                "Perception is used to",
+                                "calculate your vision radius",
+                                "and your chance to hit enemies."
+                            ])
+                        case 4: # strength
+                            self.dialogue_manager.queue_text([
+                                "Strength",
+                                "Strength is used to calculate",
+                                "your HP and is used as a flat",
+                                "damage modifier."
+                            ])
+
             case GameScene.PLAYING:
                 self.HandleHelpScreen()
 
@@ -705,6 +767,7 @@ class TerrusRequiem(PyneEngine):
                         self.targeting = not self.targeting
 
                         if self.targeting:
+                            # TODO make it so that only visible enemies are targeted
                             # target the closest enemy found
                             closest_x = 10_000
                             closest_y = 10_000
@@ -725,8 +788,8 @@ class TerrusRequiem(PyneEngine):
                                 closest_y = self.player.y
                                 closest_distance = 0
 
-                            self.targetx = closest_x
-                            self.targety = closest_y
+                            self.targetx = closest_x if closest_x != 10_000 else self.player.x
+                            self.targety = closest_y if closest_y != 10_000 else self.player.y
                         else:
                             self.targetx = self.targety = -1
 
@@ -816,6 +879,38 @@ class TerrusRequiem(PyneEngine):
                 
                 return True
 
+            case GameScene.CHARACTER_CREATION:
+                show_dialogue = True
+
+                self.DrawRect((self.Color.GREEN, self.Color.BACKGROUND), 0, 0, self.TerminalWidth() - 1, self.TerminalHeight() - 1)
+
+                self.DrawTextLines(t := [
+                    r"  />  ___   ___   ___    _    ___   ___    _    __   <\  ",
+                    r" //  |   | |   | |   |  / \  | | | | | |  / \  |  \   \\ ",
+                    r"<<   |     |___| |__   |___|   |     |   |   | |   |   >>",
+                    r" \\  |     |  \  |     |   |   |     |   |   | |   |  // ",
+                    r"  \> |___| |   | |___| |   |   |   |_|_|  \_/  |   | </  ",
+                ], (self.Color.WHITE, self.Color.BACKGROUND), x := (self.TerminalWidth() // 2 - len(t[0]) // 2), y := 2)
+
+                for i in [0, 1, 2, 3, 53, 54, 55, 56]:
+                    for j in range(5):
+                        self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j)
+                
+                self.DrawText(t := f"{25 - sum(self.player.stats)} points left", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 15)
+
+                self.DrawText(t := f"Endurance    : {self.player.stats[PlayerStats.ENDURANCE]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 0 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 9)
+                self.DrawText(t := f"Dexterity    : {self.player.stats[PlayerStats.DEXTERITY]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 1 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 10)
+                self.DrawText(t := f"Intelligence : {self.player.stats[PlayerStats.INTELLIGENCE]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 2 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 11)
+                self.DrawText(t := f"Perception   : {self.player.stats[PlayerStats.PERCEPTION]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 3 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 12)
+                self.DrawText(t := f"Strength     : {self.player.stats[PlayerStats.STRENGTH]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 4 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 13)
+
+                self.DrawText(t := "[U/D/L/R] to navigate / [?] to learn more / [SPACE] to begin", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, self.TerminalHeight() - 3)
+
+                for x in range(self.TerminalWidth() - 2):
+                    for y in range(self.TerminalHeight() - 2):
+                        if self.CharAt(x + 1, y + 1).symbol == " ":
+                            self.DrawChar('.', (random.choice([self.Color.DARK_GREEN, self.Color.VERY_DARK_GREEN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BACKGROUND), x + 1, y + 1)
+
             case GameScene.PLAYING:
                 # blit the map data buffer to the game window
                 # and put the map name on the bottom of the screen
@@ -831,7 +926,7 @@ class TerrusRequiem(PyneEngine):
                 
                 return True
             
-        if self.current_scene != GameScene.HELP:
+        if self.current_scene == GameScene.PLAYING:
             show_dialogue = True
 
             # draw the '@' for the player
@@ -902,22 +997,22 @@ class TerrusRequiem(PyneEngine):
                     self.DrawText(msg, (self.message_colors[m], self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, y)
                     y += 1
 
-        # put the game window onto the main screen
-        self.BlitBuffer(self.game_window, 0, 0)
+            # put the game window onto the main screen
+            self.BlitBuffer(self.game_window, 0, 0)
 
-        # draw panels
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 5)
-        self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
+            # draw panels
+            self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 0, panelsize - 1, 5)
+            self.DrawText('Stats', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 0)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 6, panelsize - 1, 4)
-        self.DrawText('Combat', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 6)
+            self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 6, panelsize - 1, 4)
+            self.DrawText('Combat', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 6)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 11, panelsize - 1, self.TerminalHeight() - 24)
-        self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 11)
-        self.DrawText(t := f"{len(self.player.inventory)}/{self.player.capacity}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 11)
+            self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, 11, panelsize - 1, self.TerminalHeight() - 24)
+            self.DrawText('Inventory', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, 11)
+            self.DrawText(t := f"{len(self.player.inventory)}/{self.player.capacity}", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - len(t) - 1, 11)
 
-        self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 12, panelsize - 1, 11)
-        self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 12)
+            self.DrawRect((self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize, self.TerminalHeight() - 12, panelsize - 1, 11)
+            self.DrawText('Log', (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() - panelsize + 1, self.TerminalHeight() - 12)
 
         if show_dialogue:
             self.dialogue_manager.draw(self)

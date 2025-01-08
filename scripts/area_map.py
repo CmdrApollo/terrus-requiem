@@ -127,7 +127,6 @@ class Hanger(Map):
     def generate(self):
         self.engine.FillRect(' ', (self.engine.Color.DARK_GRAY, self.engine.Color.BACKGROUND), 0, 0, self.data.width, self.data.height, self.data)
 
-
 class Cave(Map):
     def __init__(self, name, engine, danger, w=map_width, h=map_height):
         self.danger = danger

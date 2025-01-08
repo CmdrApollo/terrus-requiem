@@ -168,11 +168,11 @@ class TerrusRequiem(PyneEngine):
                 self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j, main_menu)
             
         self.DrawTextLines(lines := [
-            "p - Play (new game)  ",
-            "l - Load game        ",
-            "x - Delete saved game",
-            "c - Credits          ",
-            "q - Quit             ",
+            "[p] Play (new game)  ",
+            "[l] Load game        ",
+            "[x] Delete saved game",
+            "[c] Credits          ",
+            "[q] Quit             ",
         ], (self.Color.YELLOW, self.Color.BACKGROUND), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = main_menu)
 
         for i in range(3):
@@ -200,7 +200,7 @@ class TerrusRequiem(PyneEngine):
                 self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j, credits_screen)
 
         self.DrawTextLines(lines := [
-            "z - Return",
+            "[z] Return",
         ], (self.Color.YELLOW, self.Color.BACKGROUND), x := self.TerminalWidth() // 2 - len(lines[0]) // 2, y := self.TerminalHeight() - len(lines) - 3, scr = credits_screen)
 
         for i in range(3):
@@ -509,7 +509,7 @@ class TerrusRequiem(PyneEngine):
                             if self.selected_stat < 0: self.selected_stat += 5
                     match self.direction_x:
                         case  1: self.player.stats[self.selected_stat] = min(8, self.player.stats[self.selected_stat] + 1)
-                        case -1: self.player.stats[self.selected_stat] = max(3, self.player.stats[self.selected_stat] - 1)
+                        case -1: self.player.stats[self.selected_stat] = max(2, self.player.stats[self.selected_stat] - 1)
                     self.waiting_for_direction = True
                 
                 if cache == ' ' and 25 - sum(self.player.stats) == 0:
@@ -895,21 +895,21 @@ class TerrusRequiem(PyneEngine):
                 for i in [0, 1, 2, 3, 53, 54, 55, 56]:
                     for j in range(5):
                         self.SetColor((self.Color.YELLOW, self.Color.BACKGROUND), x + i, y + j)
-                
+
                 self.DrawText(t := f"{25 - sum(self.player.stats)} points left", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 15)
-
-                self.DrawText(t := f"Endurance    : {self.player.stats[PlayerStats.ENDURANCE]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 0 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 9)
-                self.DrawText(t := f"Dexterity    : {self.player.stats[PlayerStats.DEXTERITY]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 1 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 10)
-                self.DrawText(t := f"Intelligence : {self.player.stats[PlayerStats.INTELLIGENCE]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 2 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 11)
-                self.DrawText(t := f"Perception   : {self.player.stats[PlayerStats.PERCEPTION]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 3 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 12)
-                self.DrawText(t := f"Strength     : {self.player.stats[PlayerStats.STRENGTH]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 4 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 13)
-
-                self.DrawText(t := "[U/D/L/R] to navigate / [?] to learn more / [SPACE] to begin", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, self.TerminalHeight() - 3)
-
+                
                 for x in range(self.TerminalWidth() - 2):
                     for y in range(self.TerminalHeight() - 2):
                         if self.CharAt(x + 1, y + 1).symbol == " ":
                             self.DrawChar('.', (random.choice([self.Color.DARK_GREEN, self.Color.VERY_DARK_GREEN, self.Color.DARK_GRAY, self.Color.VERY_DARK_GRAY]), self.Color.BACKGROUND), x + 1, y + 1)
+
+                self.DrawText(t := f"Endurance    : {self.player.stats[PlayerStats.ENDURANCE]   }", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 0 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 9)
+                self.DrawText(t := f"Dexterity    : {self.player.stats[PlayerStats.DEXTERITY]   }", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 1 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 10)
+                self.DrawText(t := f"Intelligence : {self.player.stats[PlayerStats.INTELLIGENCE]}", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 2 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 11)
+                self.DrawText(t := f"Perception   : {self.player.stats[PlayerStats.PERCEPTION]  }", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 3 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 12)
+                self.DrawText(t := f"Strength     : {self.player.stats[PlayerStats.STRENGTH]    }", (self.Color.WHITE, self.Color.DARK_GRAY if self.selected_stat == 4 else self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, 13)
+
+                self.DrawText(t := "[U/D/L/R] to navigate / [?] to learn more / [SPACE] to begin", (self.Color.WHITE, self.Color.BACKGROUND), self.TerminalWidth() // 2 - len(t) // 2, self.TerminalHeight() - 3)
 
             case GameScene.PLAYING:
                 # blit the map data buffer to the game window
@@ -1018,21 +1018,21 @@ class TerrusRequiem(PyneEngine):
             self.dialogue_manager.draw(self)
 
         if self.targetx + 1 and self.targetx - self.camx < self.game_window.width and self.targety - self.camy < self.game_window.height:
-                if (pygame.time.get_ticks() // 500) % 2:
-                    self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, self.targety - self.camy)
-                if self.questioning:
-                    qy = 0
-                    df = True
-                    if active_visibility[self.targety * self.current_map.width + self.targetx]:
-                        t = {'.': "Empty space.", '#': "A wall.", '=': "Water."}[self.current_map.data.GetAt(self.targetx, self.targety).symbol]
-                        for e in self.current_map.entities:
-                            if e.x == self.targetx and e.y == self.targety:
-                                t = e.name + "."
-                                self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, qy)
-                                qy += 1
-                                df = False
-                        if df:
+            if (pygame.time.get_ticks() // 500) % 2:
+                self.SetColor((self._scr_buf.GetAt(self.targetx - self.camx, self.targety - self.camy).fg, self.Color.WHITE), self.targetx - self.camx, self.targety - self.camy)
+            if self.questioning:
+                qy = 0
+                df = True
+                if active_visibility[self.targety * self.current_map.width + self.targetx]:
+                    t = {'.': "Empty space.", '#': "A wall.", '=': "Water."}[self.current_map.data.GetAt(self.targetx, self.targety).symbol]
+                    for e in self.current_map.entities:
+                        if e.x == self.targetx and e.y == self.targety:
+                            t = e.name + "."
                             self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, qy)
+                            qy += 1
+                            df = False
+                    if df:
+                        self.DrawText(t, (self.Color.WHITE, self.Color.BACKGROUND), 0, qy)
  
         return True
 

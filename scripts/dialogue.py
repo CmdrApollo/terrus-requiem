@@ -14,7 +14,7 @@ class DialogueManager:
             self.queued_text.pop(0)
 
     def queue_text(self, text):
-        self.queued_text.append(text)
+        self.queued_text.append(text + [' ', '[z] to close'])
 
     def has_dialogue(self):
         return bool(len(self.queued_text))

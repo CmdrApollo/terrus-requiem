@@ -50,7 +50,7 @@ class PyneEngine:
 
         font = "mono_font_roguelike.ttf"
 
-        point = 12
+        point = 16
         for _ in range(0x40):
             s = pygame.font.Font(font, point).size('M')
             
